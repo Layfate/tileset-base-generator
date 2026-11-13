@@ -1,0 +1,31 @@
+{
+  "name": "tileset-base-generator",
+  "version": "1.0.0",
+  "description": "Seamless 15, 17 and 47-piece autotile tileset base generator for 16, 32 and 64 px pixel-art tiles.",
+  "license": "MIT",
+  "bin": {
+    "tileset-base-generator": "cli.js"
+  },
+  "main": "src/generator.js",
+  "scripts": {
+    "test": "node test/seams.test.js",
+    "generate": "node cli.js"
+  },
+  "keywords": [
+    "tileset",
+    "autotile",
+    "blob",
+    "wang",
+    "pixel-art",
+    "gamedev",
+    "godot",
+    "tiled"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Layfate/tileset-base-generator.git"
+  }
+}

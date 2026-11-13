@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tileset Base Generator</title>
+    <meta name="description" content="Free, open-source generator for seamless 15, 17 and 47-piece autotile tileset bases at 16, 32 and 64 px." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0f1c'/%3E%3Crect x='2' y='2' width='12' height='12' rx='2' fill='%2372ab3a'/%3E%3Crect x='2' y='11' width='12' height='3' fill='%236f5a43'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <div>
+          <h1>Tileset Base Generator</h1>
+          <p>Seamless autotile bases for pixel-art games</p>
+        </div>
+      </div>
+      <a class="gh" href="https://github.com/Layfate/tileset-base-generator" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>Source</span>
+      </a>
+    </header>
+
+    <main class="app">
+      <aside class="panel" aria-label="Generator settings">
+        <section>
+          <h2>Geometry</h2>
+          <label class="lbl">Mode</label>
+          <div class="seg" data-key="mode">
+            <button data-value="15">15-piece</button>
+            <button data-value="17">17-piece</button>
+            <button data-value="47">47-piece</button>
+          </div>
+
+          <label class="lbl">Tile size</label>
+          <div class="seg" data-key="tileSize">
+            <button data-value="16">16</button>
+            <button data-value="32">32</button>
+            <button data-value="64">64</button>
+          </div>
+
+          <label class="lbl">Edge style</label>
+          <div class="seg" data-key="rough">
+            <button data-value="true">Rough</button>
+            <button data-value="false">Clean</button>
+          </div>
+
+          <div class="slider" data-key="radius"><label>Corner radius <output></output></label><input type="range" min="0" step="1" /></div>
+          <div class="slider" data-key="padding">
+            <label>Tile padding <output></output></label><input type="range" min="0" step="1" />
+            <small>Distance from an open tile edge</small>
+          </div>
+          <div class="slider" data-key="noise"><label>Edge noise <output></output></label><input type="range" min="0" step="1" /></div>
+          <div class="slider" data-key="noiseSize"><label>Noise size <output></output></label><input type="range" min="1" step="1" /></div>
+        </section>
+
+        <section>
+          <h2>Color</h2>
+          <div class="colors">
+            <label class="color"><span>Base</span><input type="color" data-color="base" /></label>
+            <label class="color"><span>Edge</span><input type="color" data-color="edge" /></label>
+            <label class="color"><span>Rock</span><input type="color" data-color="rock" /></label>
+          </div>
+
+          <label class="check box"><input type="checkbox" data-key="elevation" /> Elevation edge</label>
+          <div class="slider" data-key="wallHeight" data-dep="elevation">
+            <label>Wall height <output></output></label><input type="range" min="1" step="1" />
+          </div>
+
+          <div class="presets" role="group" aria-label="Color presets"></div>
+
+          <div class="slider" data-key="shades">
+            <label>Shades <output></output></label><input type="range" min="2" max="8" step="1" />
+            <small>Colors in the base to edge ramp</small>
+          </div>
+          <div class="slider" data-key="fade"><label>Edge fade <output></output></label><input type="range" min="0" max="12" step="1" /></div>
+          <div class="slider" data-key="texture"><label>Texture noise <output></output></label><input type="range" min="0" max="50" step="1" /></div>
+          <div class="slider" data-key="flecks" data-dep="flecksOn"><label>Flecks <output></output></label><input type="range" min="0" max="30" step="1" /></div>
+        </section>
+
+        <section>
+          <h2>Output</h2>
+          <div class="checks">
+            <label class="check box"><input type="checkbox" data-key="whiteBg" /> White bg</label>
+            <label class="check box"><input type="checkbox" data-key="grid" /> Black grid</label>
+            <label class="check box"><input type="checkbox" data-key="upscale1024" /> 1024 upscale</label>
+            <label class="check box"><input type="checkbox" data-key="flecksOn" /> Flecks</label>
+          </div>
+          <label class="lbl" for="seed">Seed</label>
+          <input id="seed" class="seed" type="number" min="0" max="999999999" />
+          <div class="actions">
+            <button id="newSeed" class="btn ghost" title="Randomize seed (R)">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.5 6.2L3 16M3 21v-5h5"/></svg>
+              New seed
+            </button>
+            <button id="downloadPng" class="btn primary" title="Download PNG (Ctrl+S)">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+              PNG
+            </button>
+          </div>
+          <div class="actions secondary">
+            <button id="downloadJson" class="btn ghost small" title="Tile positions and bitmasks">JSON metadata</button>
+            <button id="reset" class="btn ghost small">Reset</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="stage">
+        <div class="stagebar">
+          <span id="info"></span>
+          <div class="tabs" role="tablist">
+            <button role="tab" data-tab="sheet" aria-selected="true">Sheet</button>
+            <button role="tab" data-tab="preview" aria-selected="false">Map preview</button>
+          </div>
+          <span id="seedInfo"></span>
+        </div>
+        <div class="view" id="sheetView">
+          <canvas id="sheet" aria-label="Generated tileset sheet"></canvas>
+        </div>
+        <div class="view" id="previewView" hidden>
+          <div class="previewtools">
+            <span class="hint">Left-drag paints terrain, right-drag erases.</span>
+            <button id="randomMap" class="btn ghost small">Random map</button>
+            <button id="clearMap" class="btn ghost small">Clear</button>
+            <button id="downloadMap" class="btn ghost small">Map PNG</button>
+          </div>
+          <canvas id="preview" aria-label="Autotiled map preview"></canvas>
+        </div>
+        <div id="busy" class="busy" hidden>rendering…</div>
+      </section>
+    </main>
+
+    <footer class="foot">MIT licensed · works offline · <a href="https://github.com/Layfate/tileset-base-generator#readme" target="_blank" rel="noopener">docs</a></footer>
+
+    <script src="src/layouts.js"></script>
+    <script src="src/presets.js"></script>
+    <script src="src/generator.js"></script>
+    <script src="src/preview.js"></script>
+    <script src="src/main.js"></script>
+  </body>
+</html>

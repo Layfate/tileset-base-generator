@@ -1,0 +1,6 @@
+node_modules/
+out/
+tileset-*.png
+tileset-*.json
+.DS_Store
+Thumbs.db
