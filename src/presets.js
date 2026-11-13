@@ -75,9 +75,84 @@
     };
   }
 
+  // ------------------------------------------------------------ randomizer
+
+  function rng(seed) {
+    let s = seed >>> 0 || 1;
+    return function () {
+      s = (s + 0x6d2b79f5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s = Math.max(0, Math.min(100, s)) / 100;
+    l = Math.max(0, Math.min(100, l)) / 100;
+    const f = (k) => {
+      const n = (k + h / 30) % 12;
+      const c = l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(n - 3, 9 - n, 1));
+      return Math.round(c * 255).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
+  }
+
+  /** A fill / outline / rim / rock palette built around one random hue. */
+  function randomPalette(rnd) {
+    const h = rnd() * 360;
+    const s = 30 + rnd() * 35;
+    const l = 45 + rnd() * 17;
+    const shift = rnd() * 24 - 12; // outline leans a little warmer or cooler
+    return {
+      base: hsl(h, s, l),
+      edge: hsl(h + shift, s + 10, l - 24 - rnd() * 8),
+      rim: hsl(h - shift / 2, s - 4, Math.min(85, l + 13 + rnd() * 6)),
+      rock: hsl(20 + rnd() * 25, 12 + rnd() * 18, 24 + rnd() * 14),
+    };
+  }
+
+  /**
+   * Random style settings scaled to the tile size. Output settings (mode, size,
+   * background, grid, margin, export size) are left alone. Same seed, same result.
+   */
+  function randomSettings(tileSize, seed) {
+    const rnd = rng(seed);
+    const n = tileSize;
+    const k = n / 32;
+    const int = (a, b) => Math.round(a + rnd() * (b - a));
+    const lim = (v, max, min = 0) => Math.max(min, Math.min(max, v));
+    const rough = rnd() < 0.7;
+    const names = Object.keys(PRESETS);
+    // half the time start from a preset's colours, otherwise invent a palette
+    const colors = rnd() < 0.5 ? presetColors(PRESETS[names[Math.floor(rnd() * names.length)]]) : randomPalette(rnd);
+    return {
+      seed: Math.floor(rnd() * 99999),
+      rough,
+      radius: lim(int(0, Math.round(6 * k)), Math.floor(n / 4)),
+      padding: lim(int(1, Math.round(4 * k)), Math.floor(n / 4), 1),
+      cornerOffset: lim(int(0, Math.round(4 * k)), Math.floor(n / 4)),
+      noise: lim(int(0, Math.round(6 * k)), Math.floor(n / 4)),
+      noiseSize: lim(int(Math.round(2 * k), Math.round(10 * k)), Math.floor(n / 2), 1),
+      jitter: rough ? int(10, 60) : 28,
+      elevation: rnd() < 0.3,
+      wallHeight: lim(int(Math.round(4 * k), Math.round(8 * k)), Math.floor(n / 3), 2),
+      shades: int(2, 6),
+      fade: lim(int(Math.round(1 * k), Math.round(5 * k)), 12, 1),
+      texture: int(0, 30),
+      flecksOn: rnd() < 0.5,
+      flecks: int(2, 14),
+      rimLight: rnd() < 0.35,
+      colors,
+    };
+  }
+
   TBG.PRESETS = PRESETS;
   TBG.presetColors = presetColors;
   TBG.presetStyle = presetStyle;
   TBG.defaultOptions = defaultOptions;
-  if (typeof module !== 'undefined' && module.exports) module.exports = { PRESETS, presetColors, presetStyle, defaultOptions };
+  TBG.randomSettings = randomSettings;
+  if (typeof module !== 'undefined' && module.exports)
+    module.exports = { PRESETS, presetColors, presetStyle, defaultOptions, randomSettings };
 })(typeof window !== 'undefined' ? window : globalThis);

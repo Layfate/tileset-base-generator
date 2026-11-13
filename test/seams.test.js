@@ -45,6 +45,7 @@ function variants(size) {
     ['big-noise', { ...base, noise: Math.round(size / 5), radius: Math.round(size / 10), padding: Math.round(size / 8) }],
     ['no-noise', { ...base, noise: 0, radius: 0 }],
     ['olive-rim', { ...base, rimLight: true, shades: 2, cornerOffset: Math.round(size / 4) }],
+    ...[11, 222, 3333, 44444].map((r) => ['random-' + r, { ...base, ...TBG.randomSettings(size, r) }]),
     ['olive-preset', { ...base, ...TBG.presetStyle(TBG.PRESETS.olive, size), colors: TBG.presetColors(TBG.PRESETS.olive) }],
     ['no-offset', { ...base, cornerOffset: 0, elevation: true }],
   ];

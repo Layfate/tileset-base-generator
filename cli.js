@@ -37,6 +37,8 @@ Options:
   --mode <15|16|17|47>     tileset format              (default 17)
   --size <16|32|64>        tile size in px             (default 32)
   --seed <n>               random seed                 (default 31415)
+  --random [n]             random style settings for this size (n = repeatable roll;
+                           other flags still override)
   --style <rough|clean>    edge style                  (default rough)
   --radius <px>            corner radius
   --padding <px>           distance from an open edge (16/17/47)
@@ -114,6 +116,11 @@ function main() {
   const preset = PRESETS[a.preset] || null;
   if (a.preset && !preset) throw new Error('Unknown --preset');
   if (preset) Object.assign(o, TBG.presetStyle(preset, o.tileSize), { colors: { ...o.colors, ...TBG.presetColors(preset) } });
+  if (a.random !== undefined) {
+    const roll = a.random === true ? Math.floor(Math.random() * 1e6) : Number(a.random);
+    Object.assign(o, TBG.randomSettings(size, roll));
+    console.log(`random settings #${roll}`);
+  }
   const num = (k, key) => {
     if (a[k] !== undefined) o[key] = Number(a[k]);
   };

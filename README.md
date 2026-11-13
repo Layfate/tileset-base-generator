@@ -71,6 +71,7 @@ Open the [live app](https://layfate.github.io/tileset-base-generator/), or clone
 | Control | What it does |
 | --- | --- |
 | Mode / Tile size | Tileset format and tile size in pixels |
+| Random | Rolls new style settings (shape, noise, shading, colours, extras) scaled to the current tile size. Mode, tile size and output settings stay as they are. Half the rolls use a preset palette; the rest invent one around a random hue. The header shows the roll number |
 | Edge style | **Rough**: pixel-jittered edges. **Clean**: smooth wobble only |
 | Corner radius | Rounds outer and inner corners |
 | Tile padding | Gap between the terrain and an open tile edge (16 / 17 / 47) |
@@ -89,8 +90,8 @@ Open the [live app](https://layfate.github.io/tileset-base-generator/), or clone
 | Margin | Even padding around the whole sheet |
 | 1024 px | Exports with the long side exactly 1024 px. Tiles get the largest whole-number zoom that fits, the grid stays uniform, and the leftover space becomes equal padding |
 
-Shortcuts: <kbd>R</kbd> picks a new seed, <kbd>Ctrl</kbd>+<kbd>S</kbd> downloads the PNG.
-Settings are saved in your browser. URL parameters work too, for example `?mode=47&size=16&seed=7&preset=sand&elevation=1&tab=preview`.
+Shortcuts: <kbd>D</kbd> rolls random settings, <kbd>R</kbd> picks a new seed, <kbd>Ctrl</kbd>+<kbd>S</kbd> downloads the PNG.
+Settings are saved in your browser. URL parameters work too, for example `?mode=47&size=16&seed=7&preset=sand&elevation=1&tab=preview`. Add `&random=<roll>` to share a roll of the Random button.
 
 ## Command line
 
@@ -101,6 +102,7 @@ node cli.js --mode 47 --size 32 --out blob.png --json
 node cli.js --mode 15 --size 16 --preset olive --scale 8
 node cli.js --mode 15 --size 16 --preset sand --elevation --scale 4
 node cli.js --mode 17 --size 32 --fit 1024 --grid-width 2 --margin 16
+node cli.js --mode 47 --size 32 --random 4242   # same as roll #4242 in the app
 node cli.js --help
 ```
 

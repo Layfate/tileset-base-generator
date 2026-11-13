@@ -59,6 +59,13 @@
   let tiles = null;
   let sheetImage = null;
   let pending = 0;
+  let lastRoll = null;
+  // ?random=<n> reproduces a roll of the Random button
+  const queryRoll = new URLSearchParams(location.search).get('random');
+  if (queryRoll !== null && /^\d+$/.test(queryRoll)) {
+    lastRoll = Number(queryRoll);
+    Object.assign(state, TBG.randomSettings(state.tileSize, lastRoll));
+  }
 
   const sheetCanvas = $('#sheet');
   const preview = new TBG.Preview($('#preview'));
@@ -156,6 +163,8 @@
       update();
     });
     $('#newSeed').addEventListener('click', newSeed);
+    $('#randomize').addEventListener('click', randomize);
+    $('#randomizeTop').addEventListener('click', randomize);
     $('#downloadPng').addEventListener('click', downloadPng);
     $('#downloadJson').addEventListener('click', downloadJson);
     $('#reset').addEventListener('click', () => {
@@ -194,11 +203,20 @@
     window.addEventListener('keydown', (e) => {
       if (e.target.matches('input')) return;
       if (e.key === 'r' && !e.ctrlKey && !e.metaKey) newSeed();
+      if (e.key === 'd' && !e.ctrlKey && !e.metaKey) randomize();
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         downloadPng();
       }
     });
+  }
+
+  /** Random style settings for the current mode and tile size (output settings are kept). */
+  function randomize() {
+    const roll = Math.floor(Math.random() * 1e6);
+    Object.assign(state, TBG.randomSettings(state.tileSize, roll));
+    lastRoll = roll;
+    update();
   }
 
   function newSeed() {
@@ -226,7 +244,8 @@
     updateLegend();
 
     $('#info').textContent = `${state.tileSize}px tiles - ${mode.title} - ${sheetImage.width}x${sheetImage.height}px native`;
-    $('#seedInfo').textContent = `seed ${state.seed}`;
+    $('#seedInfo').textContent = lastRoll !== null ? `random #${lastRoll} · seed ${state.seed}` : `seed ${state.seed}`;
+    $('#seedInfo').title = lastRoll !== null ? `Reproduce from the CLI with --random ${lastRoll}` : '';
     $('#busy').hidden = true;
   }
 
