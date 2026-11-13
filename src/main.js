@@ -8,7 +8,7 @@
 
   // Slider limits that depend on tile size.
   const RANGE = {
-    radius: (n) => Math.floor(n / 3),
+    radius: (n) => n / 4,
     padding: (n) => n / 4,
     noise: (n) => n / 4,
     noiseSize: (n) => n / 2,
@@ -88,7 +88,7 @@
     $$('[data-show-modes]').forEach((el) => (el.hidden = !el.dataset.showModes.split(',').includes(state.mode)));
     $('.gridcolor').classList.toggle('disabled', !state.grid);
     $('#gridColor').value = state.gridColor;
-    $$('input[data-color]').forEach((c) => (c.value = state.colors[c.dataset.color] || autoColor(c.dataset.color)));
+    $$('input[data-color]').forEach((c) => (c.value = state.colors[c.dataset.color]));
     $('#seed').value = state.seed;
   }
 
@@ -257,13 +257,6 @@
     sheetCanvas.getContext('2d').putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
     sheetCanvas.style.width = img.width / dpr + 'px';
     sheetCanvas.style.height = img.height / dpr + 'px';
-  }
-
-  /** Colour shown for an optional colour the preset doesn't set (matches the generator's default). */
-  function autoColor(key) {
-    if (key !== 'fleck') return '#000000';
-    const [r, g, b] = TBG.hexToRgb(state.colors.base).map((v) => Math.round(v + (255 - v) * 0.3));
-    return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
   }
 
   function updateLegend() {

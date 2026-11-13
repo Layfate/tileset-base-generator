@@ -47,8 +47,6 @@ Options:
   --preset <name>          ${Object.keys(PRESETS).join(', ')}
   --base/--edge/--rock/--rim-color <#hex>  colours
   --rim                    light rim just inside the outline
-  --lighting <outline|top> outline all round, or light from above
-  --fleck-color <#hex>     fleck colour (default: lighter base)
   --elevation              draw a rock wall under south edges
   --wall-height <px>       wall height
   --shades <n>             colours in base->edge ramp
@@ -146,8 +144,6 @@ function main() {
   if (a['grid-color']) o.gridColor = a['grid-color'];
   if (a['no-join']) o.joinDiagonals = false;
   if (a.rim) o.rimLight = true;
-  if (a.lighting) o.lighting = a.lighting === 'top' ? 'top' : 'outline';
-  if (a['fleck-color']) o.colors.fleck = a['fleck-color'];
 
   const tiles = TBG.renderTiles(mode, o);
   const layout = a.fit

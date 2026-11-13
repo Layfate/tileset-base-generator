@@ -294,14 +294,8 @@
     const baseLight = lighten(colBase, 0.12);
     const baseDark = mix(colBase, colEdge, 0.3);
     const colRim = o.colors.rim ? hexToRgb(o.colors.rim) : lighten(colBase, 0.25);
-    const fleckLight = o.colors.fleck ? hexToRgb(o.colors.fleck) : lighten(colBase, 0.3);
+    const fleckLight = lighten(colBase, 0.3);
     const fleckDark = mix(colBase, colEdge, 0.45);
-    // a light fleck gets a darker pixel under it (a grass tuft); a dark fleck is a single speck
-    const luma = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
-    const fleckTuft = luma(fleckLight) > luma(colBase);
-    // 'top' lighting: light from above. Edges facing down get the dark Edge
-    // colour, every other edge gets the light Rim colour.
-    const topLight = o.lighting === 'top';
     const tex = o.texture / 100;
     const nT = periodicNoise(n, 2, o.seed + 404);
     const nT2 = periodicNoise(n, 5, o.seed + 505);
@@ -329,16 +323,14 @@
             level = clamp(1 + Math.floor((jittered / o.fade) * (shades - 2)), 1, shades - 1);
           }
           c = ramp[level];
-          if (topLight && dist < 1.01) {
-            c = land[idx + W] ? colRim : colEdge;
-          } else if (o.rimLight && dist >= 1.01 && dist < 2.01) {
+          if (o.rimLight && dist >= 1.01 && dist < 2.01) {
             c = colRim; // 1px highlight just inside the outline
           } else if (level === shades - 1) {
             const v = 0.6 * t2 + 0.4 * t1;
             if (v > 1 - tex * 1.6) c = baseLight;
             else if (v < tex * 0.9) c = baseDark;
             if (isFleck(x, y)) c = fleckLight;
-            else if (fleckTuft && y > 0 && isFleck(x, y - 1)) c = fleckDark;
+            else if (y > 0 && isFleck(x, y - 1)) c = fleckDark;
           }
         } else if (wall && wall[idx]) {
           const k = wall[idx];
@@ -455,24 +447,6 @@
     return { width: w, height: h, data, geometry: { ...g, offX, offY } };
   }
 
-  /**
-   * Dual-grid lookup for the 15-piece sheet, keyed like the neighboursToAtlasCoord
-   * table in jess-hammer/dual-grid-tilemap-system-godot: [topLeft, topRight,
-   * botLeft, botRight] -> atlas [col, row]. Our sheet uses the same positions.
-   */
-  function dualGridInfo(mode) {
-    const lookup = {};
-    for (const c of mode.cells) {
-      const key = [CORNER.TL, CORNER.TR, CORNER.BL, CORNER.BR].map((b) => (c.mask & b ? 1 : 0)).join('');
-      lookup[key] = c.mask === 0 ? null : [c.col, c.row];
-    }
-    return {
-      note: 'Display tile (x, y) reads world cells (x, y) TL, (x+1, y) TR, (x, y+1) BL, (x+1, y+1) BR, i.e. tiles sit on a grid offset by half a tile.',
-      keyOrder: ['topLeft', 'topRight', 'botLeft', 'botRight'],
-      lookup,
-    };
-  }
-
   /** Engine-agnostic metadata (native scale) describing each tile's position and connections. */
   function sheetMetadata(mode, o) {
     const n = o.tileSize;
@@ -492,7 +466,6 @@
       margin,
       spacing: gap,
       seed: o.seed,
-      ...(mode.kind === 'corner' ? { dualGrid: dualGridInfo(mode) } : {}),
       tiles: mode.cells.map((c, i) => ({
         id: i,
         col: c.col,
