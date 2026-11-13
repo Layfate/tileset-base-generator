@@ -78,12 +78,12 @@ a {
 }
 
 .logo {
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: linear-gradient(#72ab3a 0 62%, #2f6a32 62% 70%, #6f5a43 70%);
-  box-shadow: inset 0 0 0 2px #2f6a32;
-  image-rendering: pixelated;
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  box-shadow: 0 4px 14px rgba(70, 90, 220, 0.35);
 }
 
 .gh {
@@ -363,20 +363,51 @@ input[type='checkbox'] {
 
 .presets {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 7px;
-  margin-top: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
 .presets button {
-  height: 30px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
   cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
 }
 
 .presets button:hover {
-  outline: 2px solid var(--accent);
+  border-color: var(--line-2);
+  color: var(--text);
+}
+
+.presets button[aria-pressed='true'] {
+  border-color: var(--sel-line);
+  background: var(--sel);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.presets canvas {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #0b0f1d;
+  box-shadow: none;
+}
+
+.presets span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .seed {

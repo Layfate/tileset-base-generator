@@ -96,6 +96,7 @@
     $('.gridcolor').classList.toggle('disabled', !state.grid);
     $('#gridColor').value = state.gridColor;
     $$('input[data-color]').forEach((c) => (c.value = state.colors[c.dataset.color]));
+    $$('.presets button').forEach((b) => b.setAttribute('aria-pressed', String(presetActive(TBG.PRESETS[b.dataset.preset]))));
     $('#seed').value = state.seed;
   }
 
@@ -142,9 +143,13 @@
     const presets = $('.presets');
     for (const [name, p] of Object.entries(TBG.PRESETS)) {
       const b = document.createElement('button');
-      b.title = name[0].toUpperCase() + name.slice(1);
-      b.setAttribute('aria-label', b.title + ' preset');
-      b.style.background = `linear-gradient(${p.base} 0 72%, ${p.edge} 72%)`;
+      const title = name[0].toUpperCase() + name.slice(1);
+      b.dataset.preset = name;
+      b.title = title + ' preset';
+      b.append(presetThumb(p));
+      const label = document.createElement('span');
+      label.textContent = title;
+      b.append(label);
       b.addEventListener('click', () => {
         state.colors = TBG.presetColors(p);
         Object.assign(state, TBG.presetStyle(p, state.tileSize));
@@ -217,6 +222,44 @@
     Object.assign(state, TBG.randomSettings(state.tileSize, roll));
     lastRoll = roll;
     update();
+  }
+
+  /** A 16px island tile rendered in the preset's own style, as the swatch. */
+  function presetThumb(p) {
+    const n = 16;
+    // same island shape for every preset; only colours and shading differ
+    const style = TBG.presetStyle(p, n);
+    const o = {
+      ...TBG.defaultOptions(n),
+      colors: TBG.presetColors(p),
+      rimLight: !!style.rimLight,
+      shades: style.shades || 3,
+      texture: style.texture != null ? style.texture : 8,
+      padding: 1,
+      radius: 4,
+      noise: 1,
+      noiseSize: 4,
+      fade: 1,
+      elevation: true,
+      wallHeight: 3,
+      seed: 7,
+    };
+    const { rgba } = TBG.renderTile({ kind: 'edge', mask: 0 }, o);
+    const src = document.createElement('canvas');
+    src.width = src.height = n;
+    src.getContext('2d').putImageData(new ImageData(rgba, n, n), 0, 0);
+    const scale = Math.max(1, Math.round(2 * (window.devicePixelRatio || 1))); // crisp at any display scaling (shown at 28 CSS px)
+    const c = document.createElement('canvas');
+    c.width = c.height = n * scale;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, 0, 0, c.width, c.height);
+    return c;
+  }
+
+  function presetActive(p) {
+    const c = state.colors;
+    return ['base', 'edge', 'rock'].every((k) => String(c[k]).toLowerCase() === String(p[k]).toLowerCase());
   }
 
   function newSeed() {

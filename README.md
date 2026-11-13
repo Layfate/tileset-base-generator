@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/logo.svg" width="96" height="96" alt="Tileset Base Generator logo"></p>
+
 # Tileset Base Generator
 
 A free, open-source generator for **seamless autotile tileset bases**. Choose a format and a tile size, adjust the shape and colours, and download a PNG sprite sheet plus JSON tile metadata.

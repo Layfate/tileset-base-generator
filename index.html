@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tileset Base Generator</title>
     <meta name="description" content="Free, open-source generator for seamless 15, 17 and 47-piece autotile tileset bases at 16, 32 and 64 px." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0f1c'/%3E%3Crect x='2' y='2' width='12' height='12' rx='2' fill='%2372ab3a'/%3E%3Crect x='2' y='11' width='12' height='3' fill='%236f5a43'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' shape-rendering='crispEdges'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%235a4fd6'/%3E%3Cstop offset='1' stop-color='%232a8fc4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='20' height='20' rx='4' fill='url%28%23b%29'/%3E%3Cpath fill='%231f4425' d='M6 3h8v1h-8zM4 4h2v1h-2zM14 4h2v1h-2zM3 5h1v1h-1zM16 5h1v1h-1zM3 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM17 7h1v1h-1zM2 8h1v1h-1zM17 8h1v1h-1zM2 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM17 10h1v1h-1zM2 11h1v1h-1zM17 11h1v1h-1zM3 12h1v1h-1zM16 12h1v1h-1zM3 13h1v1h-1zM16 13h1v1h-1zM4 14h1v1h-1zM15 14h1v1h-1zM5 15h1v1h-1zM14 15h1v1h-1zM6 16h8v1h-8z'/%3E%3Cpath fill='%23a6d46e' d='M6 4h8v1h-8zM4 5h2v1h-2zM14 5h2v1h-2zM4 6h1v1h-1zM15 6h1v1h-1zM3 7h1v1h-1zM16 7h1v1h-1zM3 8h1v1h-1z'/%3E%3Cpath fill='%2372ab3a' d='M6 5h8v1h-8zM5 6h10v1h-10zM4 7h3v1h-3zM8 7h8v1h-8zM4 8h3v1h-3zM8 8h9v1h-9zM3 9h10v1h-10zM14 9h3v1h-3zM3 10h10v1h-10zM14 10h3v1h-3zM3 11h14v1h-14zM4 12h12v1h-12z'/%3E%3Cpath fill='%23e9f6d4' d='M7 7h1v1h-1zM13 9h1v1h-1z'/%3E%3Cpath fill='%235f9631' d='M7 8h1v1h-1zM13 10h1v1h-1z'/%3E%3Cpath fill='%237a6248' d='M4 13h12v1h-12zM5 14h2v1h-2zM8 14h4v1h-4zM13 14h2v1h-2z'/%3E%3Cpath fill='%235a4634' d='M7 14h1v1h-1zM12 14h1v1h-1z'/%3E%3Cpath fill='%233b2d22' d='M6 15h8v1h-8z'/%3E%3Cpath fill='%230b1020' fill-opacity='.35' d='M10 3h1v14h-1zM2 10h16v1h-16z'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="src/styles.css" />
   </head>
   <body>
     <header class="topbar">
       <div class="brand">
-        <span class="logo" aria-hidden="true"></span>
+        <svg class="logo" width="40" height="40" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" shape-rendering="crispEdges"><defs><linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a4fd6"/><stop offset="1" stop-color="#2a8fc4"/></linearGradient></defs><rect width="20" height="20" rx="4" fill="url(#logo-bg)"/><path fill="#1f4425" d="M6 3h8v1h-8zM4 4h2v1h-2zM14 4h2v1h-2zM3 5h1v1h-1zM16 5h1v1h-1zM3 6h1v1h-1zM16 6h1v1h-1zM2 7h1v1h-1zM17 7h1v1h-1zM2 8h1v1h-1zM17 8h1v1h-1zM2 9h1v1h-1zM17 9h1v1h-1zM2 10h1v1h-1zM17 10h1v1h-1zM2 11h1v1h-1zM17 11h1v1h-1zM3 12h1v1h-1zM16 12h1v1h-1zM3 13h1v1h-1zM16 13h1v1h-1zM4 14h1v1h-1zM15 14h1v1h-1zM5 15h1v1h-1zM14 15h1v1h-1zM6 16h8v1h-8z"/><path fill="#a6d46e" d="M6 4h8v1h-8zM4 5h2v1h-2zM14 5h2v1h-2zM4 6h1v1h-1zM15 6h1v1h-1zM3 7h1v1h-1zM16 7h1v1h-1zM3 8h1v1h-1z"/><path fill="#72ab3a" d="M6 5h8v1h-8zM5 6h10v1h-10zM4 7h3v1h-3zM8 7h8v1h-8zM4 8h3v1h-3zM8 8h9v1h-9zM3 9h10v1h-10zM14 9h3v1h-3zM3 10h10v1h-10zM14 10h3v1h-3zM3 11h14v1h-14zM4 12h12v1h-12z"/><path fill="#e9f6d4" d="M7 7h1v1h-1zM13 9h1v1h-1z"/><path fill="#5f9631" d="M7 8h1v1h-1zM13 10h1v1h-1z"/><path fill="#7a6248" d="M4 13h12v1h-12zM5 14h2v1h-2zM8 14h4v1h-4zM13 14h2v1h-2z"/><path fill="#5a4634" d="M7 14h1v1h-1zM12 14h1v1h-1z"/><path fill="#3b2d22" d="M6 15h8v1h-8z"/><path fill="#0b1020" fill-opacity=".35" d="M10 3h1v14h-1zM2 10h16v1h-16z"/></svg>
         <div>
           <h1>Tileset Base Generator</h1>
           <p>Seamless autotile bases for pixel-art games</p>
@@ -79,6 +79,7 @@
             <label>Wall height <output></output></label><input type="range" min="1" step="1" />
           </div>
 
+          <label class="lbl">Presets</label>
           <div class="presets" role="group" aria-label="Color presets"></div>
 
           <div class="slider" data-key="shades">
