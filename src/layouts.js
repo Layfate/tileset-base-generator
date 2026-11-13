@@ -45,10 +45,10 @@
   // 15-piece: 4x4 sheet whose tiles join into one continuous picture.
   // Contains all 16 corner combinations (mask 0 is the empty tile).
   const LAYOUT_15 = [
-    [7, 13, 8, 2],
-    [14, 11, 1, 4],
-    [3, 5, 12, 10],
-    [0, 6, 15, 9],
+    [8, 6, 13, 12],
+    [5, 14, 15, 11],
+    [2, 3, 7, 9],
+    [0, 4, 10, 1],
   ];
 
   // 17-piece top-down: 3x3 block, vertical strip, horizontal strip,
