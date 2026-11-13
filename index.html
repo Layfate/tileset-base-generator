@@ -54,6 +54,7 @@
           </div>
           <div class="slider" data-key="noise"><label>Edge noise <output></output></label><input type="range" min="0" step="1" /></div>
           <div class="slider" data-key="noiseSize"><label>Noise size <output></output></label><input type="range" min="1" step="1" /></div>
+          <label class="check box" data-mode-only="15"><input type="checkbox" data-key="joinDiagonals" /> Join diagonal pieces</label>
         </section>
 
         <section>
@@ -85,9 +86,18 @@
           <div class="checks">
             <label class="check box"><input type="checkbox" data-key="whiteBg" /> White bg</label>
             <label class="check box"><input type="checkbox" data-key="grid" /> Black grid</label>
-            <label class="check box"><input type="checkbox" data-key="upscale1024" /> 1024 upscale</label>
+            <label class="check box"><input type="checkbox" data-key="upscale1024" /> 1024 px</label>
             <label class="check box"><input type="checkbox" data-key="flecksOn" /> Flecks</label>
           </div>
+          <div class="slider" data-key="gridWidth" data-dep="grid">
+            <label>Grid line <output></output></label><input type="range" min="1" max="4" step="1" />
+            <small>Same thickness everywhere, at any zoom or export size</small>
+          </div>
+          <div class="slider" data-key="margin">
+            <label>Margin <output></output></label><input type="range" min="0" max="32" step="1" />
+            <small>Even padding around the whole sheet</small>
+          </div>
+          <label class="color gridcolor"><span>Grid color</span><input type="color" id="gridColor" /></label>
           <label class="lbl" for="seed">Seed</label>
           <input id="seed" class="seed" type="number" min="0" max="999999999" />
           <div class="actions">

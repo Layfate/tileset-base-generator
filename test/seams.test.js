@@ -65,6 +65,66 @@ check('17-piece has 17 tiles', () => {
   assert.strictEqual(TBG.MODES['17'].cells.length, 17);
 });
 
+console.log('grid');
+for (const modeId of ['15', '17', '47']) {
+  const mode = TBG.MODES[modeId];
+  for (const size of [16, 32, 64]) {
+    const o = { ...defaultOptions(size), gridColor: '#ff00ff', gridWidth: 2, margin: 5 };
+    const tiles = TBG.renderTiles(mode, o);
+    check(`${modeId}-piece ${size}px: grid lines are uniform at every zoom`, () => {
+      for (const scale of [1, 2, 3, 5]) {
+        const img = TBG.composeSheet(mode, tiles, o, { scale });
+        const isGrid = (x, y) => {
+          const i = (y * img.width + x) * 4;
+          return img.data[i] === 255 && img.data[i + 1] === 0 && img.data[i + 2] === 255;
+        };
+        const scan = (len, at) => {
+          const runs = [];
+          let start = -1;
+          for (let k = 0; k <= len; k++) {
+            const g = k < len && at(k);
+            if (g && start < 0) start = k;
+            if (!g && start >= 0) runs.push([start, k - start]), (start = -1);
+          }
+          return runs;
+        };
+        const midY = img.geometry.offY + 5 + 2 + Math.floor((size * scale) / 2);
+        const midX = img.geometry.offX + 5 + 2 + Math.floor((size * scale) / 2);
+        const cols = scan(img.width, (x) => isGrid(x, midY));
+        const rows = scan(img.height, (y) => isGrid(midX, y));
+        assert.strictEqual(cols.length, mode.cols + 1, `scale ${scale}: ${cols.length} vertical lines`);
+        assert.strictEqual(rows.length, mode.rows + 1, `scale ${scale}: ${rows.length} horizontal lines`);
+        for (const [, w] of cols.concat(rows)) assert.strictEqual(w, 2, `scale ${scale}: line ${w}px`);
+        assert.strictEqual(cols[0][0], 5, 'left margin');
+        assert.strictEqual(img.width - (cols[cols.length - 1][0] + 2), 5, 'right margin');
+        assert.strictEqual(rows[0][0], 5, 'top margin');
+        assert.strictEqual(img.height - (rows[rows.length - 1][0] + 2), 5, 'bottom margin');
+      }
+    });
+    check(`${modeId}-piece ${size}px: 1024 fit is exact with even padding`, () => {
+      const fit = TBG.fitToSize(mode, o, 1024);
+      const img = TBG.composeSheet(mode, tiles, o, fit);
+      assert.strictEqual(Math.max(img.width, img.height), 1024);
+      const g = img.geometry;
+      const right = img.width - g.offX - g.width;
+      const bottom = img.height - g.offY - g.height;
+      assert.ok(Math.abs(g.offX - right) <= 1 && Math.abs(g.offY - bottom) <= 1, 'centred');
+      assert.ok(Math.abs(g.offX - g.offY) <= 1, 'same padding on every side');
+    });
+  }
+}
+
+check('15-piece diagonal tiles join through the centre', () => {
+  for (const size of [16, 32, 64]) {
+    const o = defaultOptions(size);
+    for (const cell of TBG.MODES['15'].cells.filter((c) => c.mask === 5 || c.mask === 10)) {
+      const { solid } = TBG.renderTile(cell, o);
+      const c = size / 2;
+      assert.ok(solid[c * size + c] && solid[(c - 1) * size + c - 1], `mask ${cell.mask} @${size}px centre is empty`);
+    }
+  }
+});
+
 for (const size of [16, 32, 64]) {
   for (const [vname, o] of variants(size)) {
     for (const modeId of ['15', '17', '47']) {

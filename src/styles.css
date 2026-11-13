@@ -322,6 +322,16 @@ input[type='checkbox'] {
   accent-color: var(--accent);
 }
 
+.gridcolor {
+  margin-top: 14px;
+}
+
+.gridcolor.disabled,
+.check.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .presets {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

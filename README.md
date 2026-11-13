@@ -62,8 +62,11 @@ Open the [live app](https://layfate.github.io/tileset-base-generator/), or clone
 | Elevation edge / Wall height | Draws a cliff face under south-facing edges |
 | Shades / Edge fade | Number of colours from outline to fill, and how wide the fade is |
 | Texture noise / Flecks | Interior variation and grass-style flecks |
-| White bg / Black grid | Sheet background and 1 px separator lines |
-| 1024 upscale | Exports with the longest side scaled to 1024 px (nearest neighbour) |
+| Join diagonal pieces | 15-piece only: the two diagonal tiles connect through the centre instead of touching at a single point |
+| White bg / Black grid | Sheet background and grid lines |
+| Grid line / Grid color | Line thickness and colour. Every line, including the outer frame, has the same thickness at any zoom and in every export |
+| Margin | Even padding around the whole sheet |
+| 1024 px | Exports with the long side exactly 1024 px. Tiles get the largest whole-number zoom that fits, the grid stays uniform, and the leftover space becomes equal padding |
 
 Shortcuts: <kbd>R</kbd> picks a new seed, <kbd>Ctrl</kbd>+<kbd>S</kbd> downloads the PNG.
 Settings are saved in your browser. URL parameters work too, for example `?mode=47&size=16&seed=7&preset=sand&elevation=1&tab=preview`.
@@ -75,14 +78,15 @@ Requires Node.js 16 or newer. No `npm install` needed.
 ```bash
 node cli.js --mode 47 --size 32 --out blob.png --json
 node cli.js --mode 15 --size 16 --preset sand --elevation --scale 4
+node cli.js --mode 17 --size 32 --fit 1024 --grid-width 2 --margin 16
 node cli.js --help
 ```
 
-`--json` also writes a metadata file containing each tile's position and bitmask.
+`--json` also writes a metadata file containing each tile's position and bitmask. `--scale` and `--fit` enlarge the tiles by whole numbers only. Grid lines stay at `--grid-width` pixels.
 
 ## Importing into an engine
 
-The JSON file lists every tile's `x`, `y`, `col`, `row` and `mask`, plus `margin` and `spacing`. Spacing is 1 when the black grid is on and 0 when it's off. For engine import, turn off **Black grid** and **White bg** so you get a clean, transparent sheet.
+The JSON file lists every tile's `x`, `y`, `col`, `row` and `mask`, plus `margin` and `spacing` for the native-size PNG. Spacing is the grid line width (0 when the grid is off), and margin is the outer padding plus one line. For engine import, turn off **Black grid** and **White bg** so you get a clean, transparent sheet.
 
 - **Godot 4:** create a TileSet atlas with the PNG. Use the terrain mode *Match Corners* for the 15-piece set and *Match Corners and Sides* for the 47-piece set, and set each tile's peering bits from `connects` in the JSON.
 - **Tiled:** create a Terrain Set. Use *Corner* for 15-piece and *Mixed* for 47-piece.

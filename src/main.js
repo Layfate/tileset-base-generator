@@ -86,6 +86,9 @@
     $('[data-key="padding"] small').textContent =
       state.mode === '15' ? 'Corner tiles split at the tile centre' : 'Distance from an open tile edge';
     $$('input[type=checkbox][data-key]').forEach((c) => (c.checked = !!state[c.dataset.key]));
+    $$('[data-mode-only]').forEach((el) => el.classList.toggle('disabled', el.dataset.modeOnly !== state.mode));
+    $('.gridcolor').classList.toggle('disabled', !state.grid);
+    $('#gridColor').value = state.gridColor;
     $$('input[data-color]').forEach((c) => (c.value = state.colors[c.dataset.color]));
     $('#seed').value = state.seed;
   }
@@ -143,6 +146,11 @@
       presets.appendChild(b);
     }
 
+    $('#gridColor').addEventListener('input', (e) => {
+      state.gridColor = e.target.value;
+      update();
+    });
+
     $('#seed').addEventListener('change', (e) => {
       state.seed = Math.max(0, Math.floor(Number(e.target.value) || 0));
       update();
@@ -161,18 +169,22 @@
         $('#sheetView').hidden = t.dataset.tab !== 'sheet';
         $('#previewView').hidden = t.dataset.tab !== 'preview';
         if (t.dataset.tab === 'preview') preview.draw();
-        else fitSheet();
+        else drawSheet();
       })
     );
     $('#randomMap').addEventListener('click', () => preview.randomize((Math.random() * 1e9) | 0));
     $('#clearMap').addEventListener('click', () => preview.clear());
     $('#downloadMap').addEventListener('click', () =>
-      $('#preview').toBlob((b) => saveBlob(b, `map-preview-${state.mode}-${state.tileSize}px.png`))
+      preview.nativeCanvas().toBlob((b) => saveBlob(b, `map-preview-${state.mode}-${state.tileSize}px.png`))
     );
 
+    let resizeFrame = 0;
     window.addEventListener('resize', () => {
-      fitSheet();
-      if (!$('#previewView').hidden) preview.fit();
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        drawSheet();
+        if (!$('#previewView').hidden) preview.draw();
+      });
     });
     window.addEventListener('keydown', (e) => {
       if (e.target.matches('input')) return;
@@ -203,11 +215,8 @@
     const mode = TBG.MODES[state.mode];
     const opts = { ...state };
     tiles = TBG.renderTiles(mode, opts);
-    sheetImage = TBG.composeSheet(mode, tiles, opts);
-    sheetCanvas.width = sheetImage.width;
-    sheetCanvas.height = sheetImage.height;
-    sheetCanvas.getContext('2d').putImageData(new ImageData(sheetImage.data, sheetImage.width, sheetImage.height), 0, 0);
-    fitSheet();
+    sheetImage = TBG.composeSheet(mode, tiles, opts); // native size, used for export
+    drawSheet();
     preview.setTiles(mode, tiles, opts);
 
     $('#info').textContent = `${state.tileSize}px tiles - ${mode.title} - ${sheetImage.width}x${sheetImage.height}px native`;
@@ -215,14 +224,41 @@
     $('#busy').hidden = true;
   }
 
-  function fitSheet() {
+  /**
+   * Draw the on-screen sheet in *device* pixels: tiles get an integer zoom and
+   * the grid is drawn at that resolution, so every line is equally thick even
+   * with fractional Windows display scaling (125%, 150%).
+   */
+  function drawSheet() {
     const view = $('#sheetView');
-    if (view.hidden) return;
-    const availW = Math.max(200, view.clientWidth - 48);
-    const availH = Math.max(240, window.innerHeight - 220);
-    const s = Math.max(1, Math.floor(Math.min(availW / sheetCanvas.width, availH / sheetCanvas.height)));
-    sheetCanvas.style.width = sheetCanvas.width * s + 'px';
-    sheetCanvas.style.height = sheetCanvas.height * s + 'px';
+    if (view.hidden || !tiles) return;
+    const mode = TBG.MODES[state.mode];
+    const dpr = window.devicePixelRatio || 1;
+    const lineWidth = Math.max(1, Math.round(state.gridWidth * dpr));
+    const margin = Math.round(state.margin * dpr);
+    const g1 = TBG.sheetGeometry(mode, state, { scale: 1, lineWidth, margin });
+    const fixedW = g1.width - mode.cols * state.tileSize;
+    const fixedH = g1.height - mode.rows * state.tileSize;
+    const availW = Math.max(200, view.clientWidth - 48) * dpr;
+    const availH = Math.max(240, window.innerHeight - 220) * dpr;
+    const scale = Math.max(
+      1,
+      Math.floor(Math.min((availW - fixedW) / (mode.cols * state.tileSize), (availH - fixedH) / (mode.rows * state.tileSize)))
+    );
+    const img = TBG.composeSheet(mode, tiles, state, { scale, lineWidth, margin });
+    sheetCanvas.width = img.width;
+    sheetCanvas.height = img.height;
+    sheetCanvas.getContext('2d').putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
+    sheetCanvas.style.width = img.width / dpr + 'px';
+    sheetCanvas.style.height = img.height / dpr + 'px';
+  }
+
+  function toCanvas(img) {
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    c.getContext('2d').putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
+    return c;
   }
 
   // ------------------------------------------------------------ export
@@ -243,17 +279,13 @@
 
   function downloadPng() {
     if (!sheetImage) return;
-    let out = sheetCanvas;
+    let img = sheetImage;
     if (state.upscale1024) {
-      const s = 1024 / Math.max(sheetImage.width, sheetImage.height);
-      out = document.createElement('canvas');
-      out.width = Math.round(sheetImage.width * s);
-      out.height = Math.round(sheetImage.height * s);
-      const ctx = out.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(sheetCanvas, 0, 0, out.width, out.height);
+      // integer tile zoom + uniform grid lines, centred so the long side is exactly 1024
+      const mode = TBG.MODES[state.mode];
+      img = TBG.composeSheet(mode, tiles, state, TBG.fitToSize(mode, state, 1024));
     }
-    out.toBlob((b) => saveBlob(b, baseName() + (state.upscale1024 ? '-1024' : '') + '.png'));
+    toCanvas(img).toBlob((b) => saveBlob(b, baseName() + (state.upscale1024 ? '-1024' : '') + '.png'));
   }
 
   function downloadJson() {

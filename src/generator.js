@@ -155,15 +155,25 @@
     };
   }
 
-  /** Corner (Wang) tiles: each quadrant belongs to the terrain of its corner. */
-  function cornerLand(mask, n, wallH) {
+  /**
+   * Corner (Wang) tiles: each quadrant belongs to the terrain of its corner.
+   * The two diagonal tiles (TL+BR, TR+BL) get a neck through the centre so the
+   * pieces join instead of touching at a single point. The neck is a diamond
+   * of radius `join` around the centre, so it never reaches a tile edge.
+   */
+  function cornerLand(mask, n, wallH, join) {
     const xm = n / 2;
     const ym = n / 2 - Math.floor(wallH / 2); // lift land so the wall fits below it
+    const diagonal = mask === (CORNER.TL | CORNER.BR) || mask === (CORNER.TR | CORNER.BL);
+    const neck = diagonal ? join : 0;
     return function (x, y) {
-      const right = x + 0.5 >= xm;
-      const bottom = y + 0.5 >= ym;
+      const cx = x + 0.5;
+      const cy = y + 0.5;
+      const right = cx >= xm;
+      const bottom = cy >= ym;
       const bit = bottom ? (right ? CORNER.BR : CORNER.BL) : right ? CORNER.TR : CORNER.TL;
-      return mask & bit ? 1 : 0;
+      if (mask & bit) return 1;
+      return neck > 0 && Math.abs(cx - xm) + Math.abs(cy - ym) < neck ? 1 : 0;
     };
   }
 
@@ -191,7 +201,8 @@
     const size = W * W;
 
     // 1. base shape on the extended grid
-    const shape = corner ? cornerLand(cell.mask, n, wallH) : edgeLand(cell.mask, n, pad, pad + wallH);
+    const join = o.joinDiagonals === false ? 0 : Math.max(2, Math.round(n * 0.22));
+    const shape = corner ? cornerLand(cell.mask, n, wallH, join) : edgeLand(cell.mask, n, pad, pad + wallH);
     let g = new Uint8Array(size);
     for (let j = 0; j < W; j++) {
       const y = clamp(j - M, 0, n - 1);
@@ -335,40 +346,100 @@
     return mode.cells.map((cell) => ({ cell, ...renderTile(cell, o) }));
   }
 
-  /** Compose rendered tiles into one sheet buffer. */
-  function composeSheet(mode, tiles, o) {
-    const n = o.tileSize;
-    const gap = o.grid ? 1 : 0;
-    const w = mode.cols * n + (mode.cols + 1) * gap;
-    const h = mode.rows * n + (mode.rows + 1) * gap;
-    const data = new Uint8ClampedArray(w * h * 4);
-    const bg = o.whiteBg ? [255, 255, 255, 255] : [0, 0, 0, 0];
-    for (let i = 0; i < w * h; i++) data.set(bg, i * 4);
-    if (gap) {
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          if (x % (n + 1) === 0 || y % (n + 1) === 0) data.set([0, 0, 0, 255], (y * w + x) * 4);
-        }
-      }
-    }
-    for (const t of tiles) {
-      const ox = gap + t.cell.col * (n + gap);
-      const oy = gap + t.cell.row * (n + gap);
-      for (let y = 0; y < n; y++) {
-        for (let x = 0; x < n; x++) {
-          const s = (y * n + x) * 4;
-          if (t.rgba[s + 3] === 0) continue;
-          data.set(t.rgba.subarray(s, s + 4), ((oy + y) * w + ox + x) * 4);
-        }
-      }
-    }
-    return { width: w, height: h, data };
+  /**
+   * Sheet geometry. Tile pixels scale by an integer `scale`; grid lines and the
+   * margin are measured in *output* pixels, so every line has the same
+   * thickness and the outer frame matches the inner lines at any scale.
+   *
+   *   margin | line | tile | line | tile | ... | line | margin
+   */
+  function sheetGeometry(mode, o, opt = {}) {
+    const scale = Math.max(1, opt.scale | 0 || 1);
+    const line = o.grid ? Math.max(1, opt.lineWidth != null ? opt.lineWidth | 0 : o.gridWidth | 0 || 1) : 0;
+    const margin = Math.max(0, opt.margin != null ? opt.margin | 0 : o.margin | 0);
+    const cell = o.tileSize * scale;
+    return {
+      scale,
+      line,
+      margin,
+      cell,
+      width: 2 * margin + mode.cols * cell + (mode.cols + 1) * line,
+      height: 2 * margin + mode.rows * cell + (mode.rows + 1) * line,
+    };
   }
 
-  /** Engine-agnostic metadata describing where each tile is and what it connects to. */
+  /**
+   * Largest integer scale that fits the sheet inside target x target px, and the
+   * output size that keeps the long side exactly `target` with equal padding
+   * on every side.
+   */
+  function fitToSize(mode, o, target, opt = {}) {
+    const g0 = sheetGeometry(mode, o, { ...opt, scale: 1 });
+    const fixedW = g0.width - mode.cols * o.tileSize;
+    const fixedH = g0.height - mode.rows * o.tileSize;
+    const scale = Math.max(
+      1,
+      Math.floor(Math.min((target - fixedW) / (mode.cols * o.tileSize), (target - fixedH) / (mode.rows * o.tileSize)))
+    );
+    const g = sheetGeometry(mode, o, { ...opt, scale });
+    const extra = Math.max(0, target - Math.max(g.width, g.height));
+    return { scale, outWidth: g.width + extra, outHeight: g.height + extra };
+  }
+
+  /**
+   * Compose rendered tiles into one RGBA sheet.
+   * opt: { scale, lineWidth, margin, outWidth, outHeight } (all optional).
+   * When outWidth/outHeight exceed the sheet, it is centred.
+   */
+  function composeSheet(mode, tiles, o, opt = {}) {
+    const g = sheetGeometry(mode, o, opt);
+    const w = Math.max(g.width, opt.outWidth | 0);
+    const h = Math.max(g.height, opt.outHeight | 0);
+    const offX = Math.floor((w - g.width) / 2);
+    const offY = Math.floor((h - g.height) / 2);
+    const data = new Uint8ClampedArray(w * h * 4);
+    const px = new Uint32Array(data.buffer);
+    const pack = (r, gg, b, a) => ((a << 24) | (b << 16) | (gg << 8) | r) >>> 0;
+    const fill = (x, y, rw, rh, c) => {
+      for (let j = y; j < y + rh; j++) px.fill(c, j * w + x, j * w + x + rw);
+    };
+
+    if (o.whiteBg) px.fill(pack(255, 255, 255, 255));
+
+    const s = g.scale;
+    const step = g.cell + g.line;
+    const gx = offX + g.margin; // grid frame origin
+    const gy = offY + g.margin;
+    if (g.line) {
+      const [r, gg, b] = hexToRgb(o.gridColor || '#000000');
+      const c = pack(r, gg, b, 255);
+      const frameW = mode.cols * step + g.line;
+      const frameH = mode.rows * step + g.line;
+      for (let k = 0; k <= mode.cols; k++) fill(gx + k * step, gy, g.line, frameH, c);
+      for (let k = 0; k <= mode.rows; k++) fill(gx, gy + k * step, frameW, g.line, c);
+    }
+
+    const n = o.tileSize;
+    for (const t of tiles) {
+      const ox = gx + g.line + t.cell.col * step;
+      const oy = gy + g.line + t.cell.row * step;
+      for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+          const i = (y * n + x) * 4;
+          if (t.rgba[i + 3] === 0) continue;
+          fill(ox + x * s, oy + y * s, s, s, pack(t.rgba[i], t.rgba[i + 1], t.rgba[i + 2], t.rgba[i + 3]));
+        }
+      }
+    }
+    return { width: w, height: h, data, geometry: { ...g, offX, offY } };
+  }
+
+  /** Engine-agnostic metadata (native scale) describing each tile's position and connections. */
   function sheetMetadata(mode, o) {
     const n = o.tileSize;
-    const gap = o.grid ? 1 : 0;
+    const g = sheetGeometry(mode, o);
+    const gap = g.line;
+    const margin = g.margin + g.line;
     return {
       generator: 'tileset-base-generator',
       format: mode.id + '-piece',
@@ -379,15 +450,15 @@
       tileSize: n,
       columns: mode.cols,
       rows: mode.rows,
-      margin: gap,
+      margin,
       spacing: gap,
       seed: o.seed,
       tiles: mode.cells.map((c, i) => ({
         id: i,
         col: c.col,
         row: c.row,
-        x: gap + c.col * (n + gap),
-        y: gap + c.row * (n + gap),
+        x: margin + c.col * (n + gap),
+        y: margin + c.row * (n + gap),
         mask: c.mask,
         empty: !!c.empty,
         connects: TBG.describeMask ? TBG.describeMask(mode.kind, c.mask) : undefined,
@@ -402,6 +473,8 @@
   TBG.renderTile = renderTile;
   TBG.renderTiles = renderTiles;
   TBG.composeSheet = composeSheet;
+  TBG.sheetGeometry = sheetGeometry;
+  TBG.fitToSize = fitToSize;
   TBG.sheetMetadata = sheetMetadata;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = TBG;

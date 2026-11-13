@@ -29,8 +29,12 @@
       texture: 12,
       flecks: 6,
       flecksOn: false,
+      joinDiagonals: true,
       whiteBg: true,
       grid: true,
+      gridWidth: 1,
+      gridColor: '#000000',
+      margin: 0,
       upscale1024: false,
       colors: { ...PRESETS.grass },
     };

@@ -116,12 +116,36 @@
       return best;
     }
 
+    /**
+     * Draw in device pixels with an integer zoom per tile pixel, so pixels stay
+     * square and even at fractional display scaling (125%, 150%).
+     */
     draw() {
       if (!this.map || !this.n) return;
       const n = this.n;
-      const { canvas, ctx } = this;
-      canvas.width = this.cols * n;
-      canvas.height = this.rows * n;
+      const dpr = window.devicePixelRatio || 1;
+      const parent = this.canvas.parentElement;
+      const availW = Math.max(200, parent.clientWidth - 48) * dpr;
+      const availH = Math.max(200, window.innerHeight - 260) * dpr;
+      const s = Math.max(1, Math.floor(Math.min(availW / (this.cols * n), availH / (this.rows * n))));
+      this.render(this.canvas, s);
+      this.canvas.style.width = this.canvas.width / dpr + 'px';
+      this.canvas.style.height = this.canvas.height / dpr + 'px';
+    }
+
+    /** The map at native resolution (1 tile pixel = 1 image pixel), for download. */
+    nativeCanvas() {
+      const c = document.createElement('canvas');
+      this.render(c, 1);
+      return c;
+    }
+
+    render(canvas, s) {
+      const n = this.n;
+      const ctx = canvas.getContext('2d');
+      const cell = n * s;
+      canvas.width = this.cols * cell;
+      canvas.height = this.rows * cell;
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (this.whiteBg) {
@@ -141,20 +165,13 @@
             });
             tile = this.bestTile(TBG.reduceMask(m));
           }
-          if (tile) ctx.drawImage(tile, x * n, y * n);
+          if (tile) ctx.drawImage(tile, x * cell, y * cell, cell, cell);
         }
       }
-      this.fit();
     }
 
-    /** Integer CSS scale so pixels stay crisp. */
     fit() {
-      const parent = this.canvas.parentElement;
-      const availW = Math.max(200, parent.clientWidth - 48);
-      const availH = Math.max(200, window.innerHeight - 260);
-      const s = Math.max(1, Math.floor(Math.min(availW / this.canvas.width, availH / this.canvas.height)));
-      this.canvas.style.width = this.canvas.width * s + 'px';
-      this.canvas.style.height = this.canvas.height * s + 'px';
+      this.draw();
     }
 
     bindPointer() {

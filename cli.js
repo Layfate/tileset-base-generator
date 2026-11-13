@@ -51,8 +51,13 @@ Options:
   --texture <0-50>         texture noise
   --flecks <n>             fleck density (0 = off)
   --transparent            transparent background (default white)
-  --no-grid                no black grid lines
-  --scale <n>              integer nearest-neighbour upscale
+  --no-grid                no grid lines
+  --grid-width <px>        grid line thickness (default 1, same at any scale)
+  --grid-color <#hex>      grid line colour (default #000000)
+  --margin <px>            even padding around the sheet (default 0)
+  --no-join                15-piece: don't join the two diagonal tiles
+  --scale <n>              integer zoom for tile pixels (lines stay thin)
+  --fit <px>               largest integer zoom that fits, long side exactly <px>
   --out <file.png>         output path (default tileset-<mode>-<size>.png)
   --json                   also write <out>.json tile metadata
 `;
@@ -94,18 +99,6 @@ function encodePNG(width, height, rgba) {
   ]);
 }
 
-function upscale(img, s) {
-  if (s <= 1) return img;
-  const w = img.width * s, h = img.height * s;
-  const data = new Uint8ClampedArray(w * h * 4);
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const src = ((Math.floor(y / s) * img.width) + Math.floor(x / s)) * 4;
-      data.set(img.data.subarray(src, src + 4), (y * w + x) * 4);
-    }
-  return { width: w, height: h, data };
-}
-
 function main() {
   const a = parseArgs(process.argv.slice(2));
   if (a.help || a.h) return console.log(HELP);
@@ -140,8 +133,16 @@ function main() {
   if (a['no-grid']) o.grid = false;
   for (const c of ['base', 'edge', 'rock']) if (a[c]) o.colors[c] = a[c];
 
+  if (a['grid-width'] !== undefined) o.gridWidth = Number(a['grid-width']);
+  if (a.margin !== undefined) o.margin = Number(a.margin);
+  if (a['grid-color']) o.gridColor = a['grid-color'];
+  if (a['no-join']) o.joinDiagonals = false;
+
   const tiles = TBG.renderTiles(mode, o);
-  const sheet = upscale(TBG.composeSheet(mode, tiles, o), Math.max(1, Number(a.scale || 1) | 0));
+  const layout = a.fit
+    ? TBG.fitToSize(mode, o, Number(a.fit))
+    : { scale: Math.max(1, Number(a.scale || 1) | 0) };
+  const sheet = TBG.composeSheet(mode, tiles, o, layout);
   const out = path.resolve(a.out && a.out !== true ? a.out : `tileset-${mode.id}-${size}.png`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, encodePNG(sheet.width, sheet.height, sheet.data));
