@@ -41,7 +41,9 @@ It covers rectangular landmasses of any size. It has no T-junction tiles, so the
 
 Each tile is defined by its **8 neighbours**. A corner only counts when both sides next to it are also terrain, which reduces 256 combinations to 47 unique tiles. This is the complete set: any painted shape tiles correctly.
 
-Edge bitmask (clockwise from north): `N = 1, NE = 2, E = 4, SE = 8, S = 16, SW = 32, W = 64, NW = 128`. Tiles are ordered by mask value, and the empty slot comes last.
+Edge bitmask (clockwise from north): `N = 1, NE = 2, E = 4, SE = 8, S = 16, SW = 32, W = 64, NW = 128`.
+
+The sheet uses the common **12×4 layout**. The left 4×4 block holds the 16 tiles with no filled corners: strips, a single island, and a 3×3 block whose inner corners are all notched. The middle and right blocks hold the tiles with mixed corners. There's one empty slot at row 1, column 10.
 
 ![47 stone elevation](docs/images/sheet-47-stone-elevation.png)
 
@@ -118,7 +120,7 @@ test/               seam tests
 
 ## Contributing
 
-Issues and pull requests are welcome. Ideas: isometric 2:1 projection, more presets, Godot `.tres` / Tiled `.tsx` export, more sheet layouts (for example the Godot 12×4 template).
+Issues and pull requests are welcome. Ideas: isometric 2:1 projection, more presets, Godot `.tres` / Tiled `.tsx` export, more sheet layouts.
 
 ## License
 

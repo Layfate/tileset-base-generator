@@ -51,6 +51,12 @@ check('47-piece has 47 unique blob masks', () => {
   const masks = TBG.MODES['47'].cells.map((c) => c.mask);
   assert.strictEqual(masks.length, 47);
   assert.strictEqual(new Set(masks).size, 47);
+  for (const m of masks) assert.strictEqual(TBG.reduceMask(m), m, `mask ${m} is not blob-reduced`);
+  assert.deepStrictEqual([...masks].sort((a, b) => a - b), TBG.blobMasks());
+});
+check('47-piece uses the 12x4 sheet', () => {
+  assert.strictEqual(TBG.MODES['47'].cols, 12);
+  assert.strictEqual(TBG.MODES['47'].rows, 4);
 });
 check('15-piece has all 16 corner combinations', () => {
   assert.strictEqual(new Set(TBG.MODES['15'].cells.map((c) => c.mask)).size, 16);

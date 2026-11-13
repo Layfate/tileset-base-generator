@@ -60,15 +60,17 @@
     [0, 4, 68, 64, null],
   ];
 
-  function layout47() {
-    const masks = blobMasks(); // 47 entries
-    const cols = 8;
-    const rows = [];
-    for (let i = 0; i < 48; i += cols) {
-      rows.push(masks.slice(i, i + cols).concat(Array(cols).fill(null)).slice(0, cols));
-    }
-    return rows;
-  }
+  // 47-piece blob: the common 12x4 sheet (as used by Godot's "3x3 minimal"
+  // style templates). Left 4x4: the 16 side-only tiles (strips, island and a
+  // 3x3 block with every inner corner notched). Middle 4x4 and right 4x4:
+  // the mixed corner tiles. One empty slot at row 1, column 10.
+  const LAYOUT_47 = [
+    [16, 20, 84, 80, 213, 92, 116, 87, 28, 125, 124, 112],
+    [17, 21, 85, 81, 29, 127, 253, 113, 31, 119, null, 245],
+    [1, 5, 69, 65, 23, 223, 247, 209, 95, 255, 221, 241],
+    [0, 4, 68, 64, 117, 71, 197, 93, 7, 199, 215, 193],
+  ];
+  const layout47 = () => LAYOUT_47;
 
   const MODES = {
     '15': {
