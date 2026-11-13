@@ -143,6 +143,7 @@ function main() {
   const tiles = TBG.renderTiles(mode, o);
   const sheet = upscale(TBG.composeSheet(mode, tiles, o), Math.max(1, Number(a.scale || 1) | 0));
   const out = path.resolve(a.out && a.out !== true ? a.out : `tileset-${mode.id}-${size}.png`);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, encodePNG(sheet.width, sheet.height, sheet.data));
   console.log(`wrote ${out} (${sheet.width}x${sheet.height})`);
   if (a.json) {
