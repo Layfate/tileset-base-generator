@@ -13,6 +13,7 @@
     noise: (n) => n / 4,
     noiseSize: (n) => n / 2,
     wallHeight: (n) => Math.floor(n / 3),
+    cornerOffset: (n) => n / 4,
   };
   const SIZE_SCALED = Object.keys(RANGE).concat(['fade']);
 
@@ -47,7 +48,8 @@
     if ([16, 32, 64].includes(size) && size !== st.tileSize) st = { ...defaults(size), mode: st.mode, colors: st.colors };
     if (TBG.MODES[q.get('mode')]) st.mode = q.get('mode');
     if (q.has('seed')) st.seed = Math.max(0, Number(q.get('seed')) | 0);
-    if (TBG.PRESETS[q.get('preset')]) st.colors = { ...TBG.PRESETS[q.get('preset')] };
+    const preset = TBG.PRESETS[q.get('preset')];
+    if (preset) Object.assign(st, TBG.presetStyle(preset, st.tileSize), { colors: TBG.presetColors(preset) });
     if (q.has('style')) st.rough = q.get('style') !== 'clean';
     if (q.has('elevation')) st.elevation = q.get('elevation') !== '0';
     return st;
@@ -80,13 +82,10 @@
       input.style.setProperty('--p', pct + '%');
       const dep = el.dataset.dep;
       let disabled = dep ? !state[dep] : false;
-      if (key === 'padding' && state.mode === '15') disabled = true;
       el.classList.toggle('disabled', disabled);
     });
-    $('[data-key="padding"] small').textContent =
-      state.mode === '15' ? 'Corner tiles split at the tile centre' : 'Distance from an open tile edge';
     $$('input[type=checkbox][data-key]').forEach((c) => (c.checked = !!state[c.dataset.key]));
-    $$('[data-mode-only]').forEach((el) => el.classList.toggle('disabled', el.dataset.modeOnly !== state.mode));
+    $$('[data-show-modes]').forEach((el) => (el.hidden = !el.dataset.showModes.split(',').includes(state.mode)));
     $('.gridcolor').classList.toggle('disabled', !state.grid);
     $('#gridColor').value = state.gridColor;
     $$('input[data-color]').forEach((c) => (c.value = state.colors[c.dataset.color]));
@@ -140,7 +139,8 @@
       b.setAttribute('aria-label', b.title + ' preset');
       b.style.background = `linear-gradient(${p.base} 0 72%, ${p.edge} 72%)`;
       b.addEventListener('click', () => {
-        state.colors = { ...p };
+        state.colors = TBG.presetColors(p);
+        Object.assign(state, TBG.presetStyle(p, state.tileSize));
         update();
       });
       presets.appendChild(b);
@@ -172,6 +172,11 @@
         else drawSheet();
       })
     );
+    $('#showGrids').addEventListener('change', (e) => {
+      preview.showGrids = e.target.checked;
+      preview.draw();
+      updateLegend();
+    });
     $('#randomMap').addEventListener('click', () => preview.randomize((Math.random() * 1e9) | 0));
     $('#clearMap').addEventListener('click', () => preview.clear());
     $('#downloadMap').addEventListener('click', () =>
@@ -218,6 +223,7 @@
     sheetImage = TBG.composeSheet(mode, tiles, opts); // native size, used for export
     drawSheet();
     preview.setTiles(mode, tiles, opts);
+    updateLegend();
 
     $('#info').textContent = `${state.tileSize}px tiles - ${mode.title} - ${sheetImage.width}x${sheetImage.height}px native`;
     $('#seedInfo').textContent = `seed ${state.seed}`;
@@ -251,6 +257,15 @@
     sheetCanvas.getContext('2d').putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
     sheetCanvas.style.width = img.width / dpr + 'px';
     sheetCanvas.style.height = img.height / dpr + 'px';
+  }
+
+  function updateLegend() {
+    const el = $('#gridLegend');
+    if (!preview.showGrids) return (el.innerHTML = '');
+    el.innerHTML =
+      TBG.MODES[state.mode].kind === 'corner'
+        ? 'Dual grid: <i style="background:#e8644e"></i>world cells you paint <i style="background:#4fd1c5"></i>tiles, offset by half a tile. Each tile reads its 4 world cells (2<sup>4</sup> = 16).'
+        : 'Single grid: <i style="background:#4fd1c5"></i>each painted cell reads its 8 neighbours (2<sup>8</sup> = 256, reduced to 47).';
   }
 
   function toCanvas(img) {

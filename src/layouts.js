@@ -53,6 +53,14 @@
 
   // 17-piece top-down: 3x3 block, vertical strip, horizontal strip,
   // single island and a cross piece with four inner corners.
+  // 16 subset: the 17-piece set without the cross tile, in a 4x4 sheet.
+  const LAYOUT_16 = [
+    [16, 28, 124, 112],
+    [17, 31, 255, 241],
+    [1, 7, 199, 193],
+    [0, 4, 68, 64],
+  ];
+
   const LAYOUT_17 = [
     [16, 28, 124, 112, 85],
     [17, 31, 255, 241, null],
@@ -79,6 +87,13 @@
       title: '15-piece corner (Wang)',
       kind: 'corner',
       ...grid(LAYOUT_15, 'corner'),
+    },
+    '16': {
+      id: '16',
+      label: '16 subset',
+      title: '16 subset',
+      kind: 'edge',
+      ...grid(LAYOUT_16, 'edge'),
     },
     '17': {
       id: '17',

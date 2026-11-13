@@ -25,6 +25,7 @@
       this.tileCanvases = new Map();
       this.matchCache = new Map();
       this.painting = 0;
+      this.showGrids = true;
       this.bindPointer();
     }
 
@@ -62,7 +63,7 @@
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
-      if (this.modeId === '17') {
+      if (this.modeId === '17' || this.modeId === '16') {
         // 17-piece sets only cover rectangles, so build a map of separated rectangles
         for (let tries = 0; tries < 120; tries++) {
           const rw = rnd() < 0.25 ? 1 : 2 + Math.floor(rnd() * 5);
@@ -129,8 +130,26 @@
       const availH = Math.max(200, window.innerHeight - 260) * dpr;
       const s = Math.max(1, Math.floor(Math.min(availW / (this.cols * n), availH / (this.rows * n))));
       this.render(this.canvas, s);
+      if (this.showGrids) this.drawGrids(s, Math.max(1, Math.round(dpr)));
       this.canvas.style.width = this.canvas.width / dpr + 'px';
       this.canvas.style.height = this.canvas.height / dpr + 'px';
+    }
+
+    /**
+     * Grid overlay. Corner (dual-grid) mode shows two grids: the world grid you
+     * paint on (red) and the tile grid offset by half a tile (teal).
+     */
+    drawGrids(s, lw) {
+      const ctx = this.ctx;
+      const cell = this.n * s;
+      const W = this.canvas.width, H = this.canvas.height;
+      const lines = (offset, color) => {
+        ctx.fillStyle = color;
+        for (let x = offset; x <= W; x += cell) ctx.fillRect(Math.round(x) - (x >= W ? lw : 0), 0, lw, H);
+        for (let y = offset; y <= H; y += cell) ctx.fillRect(0, Math.round(y) - (y >= H ? lw : 0), W, lw);
+      };
+      lines(0, 'rgba(79, 209, 197, 0.75)');
+      if (this.modeKind === 'corner') lines(cell / 2, 'rgba(232, 100, 78, 0.85)');
     }
 
     /** The map at native resolution (1 tile pixel = 1 image pixel), for download. */

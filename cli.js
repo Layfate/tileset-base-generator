@@ -34,16 +34,19 @@ function parseArgs(argv) {
 const HELP = `tileset-base-generator CLI
 
 Options:
-  --mode <15|17|47>        tileset format              (default 17)
+  --mode <15|16|17|47>     tileset format              (default 17)
   --size <16|32|64>        tile size in px             (default 32)
   --seed <n>               random seed                 (default 31415)
   --style <rough|clean>    edge style                  (default rough)
   --radius <px>            corner radius
-  --padding <px>           distance from an open edge
+  --padding <px>           distance from an open edge (16/17/47)
+  --offset <px>            15-piece: terrain reach past the tile centre
   --noise <px>             edge noise amplitude
   --noise-size <px>        edge noise feature size
+  --jitter <0-90>          rough style: 1px raggedness (default 28)
   --preset <name>          ${Object.keys(PRESETS).join(', ')}
-  --base/--edge/--rock <#hex>  colours
+  --base/--edge/--rock/--rim-color <#hex>  colours
+  --rim                    light rim just inside the outline
   --elevation              draw a rock wall under south edges
   --wall-height <px>       wall height
   --shades <n>             colours in base->edge ramp
@@ -103,20 +106,22 @@ function main() {
   const a = parseArgs(process.argv.slice(2));
   if (a.help || a.h) return console.log(HELP);
   const mode = TBG.MODES[String(a.mode || '17')];
-  if (!mode) throw new Error('Unknown --mode, use 15, 17 or 47');
+  if (!mode) throw new Error('Unknown --mode, use 15, 16, 17 or 47');
   const size = Number(a.size || 32);
   if (![16, 32, 64].includes(size)) throw new Error('--size must be 16, 32 or 64');
 
   const o = defaultOptions(size);
   const preset = PRESETS[a.preset] || null;
   if (a.preset && !preset) throw new Error('Unknown --preset');
-  if (preset) Object.assign(o.colors, preset);
+  if (preset) Object.assign(o, TBG.presetStyle(preset, o.tileSize), { colors: { ...o.colors, ...TBG.presetColors(preset) } });
   const num = (k, key) => {
     if (a[k] !== undefined) o[key] = Number(a[k]);
   };
   num('seed', 'seed');
   num('radius', 'radius');
   num('padding', 'padding');
+  num('offset', 'cornerOffset');
+  num('jitter', 'jitter');
   num('noise', 'noise');
   num('noise-size', 'noiseSize');
   num('wall-height', 'wallHeight');
@@ -132,11 +137,13 @@ function main() {
   if (a.transparent) o.whiteBg = false;
   if (a['no-grid']) o.grid = false;
   for (const c of ['base', 'edge', 'rock']) if (a[c]) o.colors[c] = a[c];
+  if (a['rim-color']) o.colors.rim = a['rim-color'];
 
   if (a['grid-width'] !== undefined) o.gridWidth = Number(a['grid-width']);
   if (a.margin !== undefined) o.margin = Number(a.margin);
   if (a['grid-color']) o.gridColor = a['grid-color'];
   if (a['no-join']) o.joinDiagonals = false;
+  if (a.rim) o.rimLight = true;
 
   const tiles = TBG.renderTiles(mode, o);
   const layout = a.fit

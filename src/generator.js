@@ -161,18 +161,19 @@
    * pieces join instead of touching at a single point. The neck is a diamond
    * of radius `join` around the centre, so it never reaches a tile edge.
    */
-  function cornerLand(mask, n, wallH, join) {
+  function cornerLand(mask, n, wallH, join, offset) {
     const xm = n / 2;
     const ym = n / 2 - Math.floor(wallH / 2); // lift land so the wall fits below it
+    const o = offset || 0; // terrain grows this far past the tile centre
     const diagonal = mask === (CORNER.TL | CORNER.BR) || mask === (CORNER.TR | CORNER.BL);
     const neck = diagonal ? join : 0;
+    const tl = mask & CORNER.TL, tr = mask & CORNER.TR, br = mask & CORNER.BR, bl = mask & CORNER.BL;
     return function (x, y) {
       const cx = x + 0.5;
       const cy = y + 0.5;
-      const right = cx >= xm;
-      const bottom = cy >= ym;
-      const bit = bottom ? (right ? CORNER.BR : CORNER.BL) : right ? CORNER.TR : CORNER.TL;
-      if (mask & bit) return 1;
+      const left = cx < xm + o, right = cx >= xm - o;
+      const top = cy < ym + o, bottom = cy >= ym - o;
+      if ((tl && left && top) || (tr && right && top) || (br && right && bottom) || (bl && left && bottom)) return 1;
       return neck > 0 && Math.abs(cx - xm) + Math.abs(cy - ym) < neck ? 1 : 0;
     };
   }
@@ -192,7 +193,8 @@
     const corner = cell.kind === 'corner';
     const pad = corner ? 0 : o.padding;
     // the wall must fit inside the tile below the land
-    const maxWall = corner ? n / 2 - 2 : n - 2 * pad - 4;
+    const offset = corner ? clamp(Math.round(o.cornerOffset || 0), 0, Math.floor(n / 4)) : 0;
+    const maxWall = corner ? n / 2 - 2 - 2 * offset : n - 2 * pad - 4;
     const wallH = o.elevation ? clamp(o.wallHeight | 0, 1, Math.max(1, maxWall)) : 0;
     const radius = o.radius;
     const amp = o.noise;
@@ -202,7 +204,7 @@
 
     // 1. base shape on the extended grid
     const join = o.joinDiagonals === false ? 0 : Math.max(2, Math.round(n * 0.22));
-    const shape = corner ? cornerLand(cell.mask, n, wallH, join) : edgeLand(cell.mask, n, pad, pad + wallH);
+    const shape = corner ? cornerLand(cell.mask, n, wallH, join, offset) : edgeLand(cell.mask, n, pad, pad + wallH);
     let g = new Uint8Array(size);
     for (let j = 0; j < W; j++) {
       const y = clamp(j - M, 0, n - 1);
@@ -210,10 +212,11 @@
     }
 
     // 2. rounded corners: closing rounds inner corners, opening rounds outer
-    if (radius > 0) {
-      g = erode(dilate(g, W, W, radius), W, W, radius);
-      g = dilate(erode(g, W, W, radius), W, W, radius);
-    }
+    // Inner corners in edge tiles are notches `pad` px from the tile border;
+    // rounding them wider than that would cross into the neighbour tile.
+    const innerRadius = corner ? radius : Math.min(radius, pad);
+    if (innerRadius > 0) g = erode(dilate(g, W, W, innerRadius), W, W, innerRadius);
+    if (radius > 0) g = dilate(erode(g, W, W, radius), W, W, radius);
 
     // 3. signed distance + periodic edge noise
     let land = g;
@@ -237,7 +240,8 @@
           let u;
           if (o.rough) {
             const jitter = hash2(mod(Math.floor(x), n), mod(Math.floor(y), n), o.seed + 303);
-            u = 0.5 * nA(x, y) + 0.22 * nB(x, y) + 0.28 * jitter;
+            const j = o.jitter != null ? clamp(o.jitter / 100, 0, 0.9) : 0.28;
+            u = (1 - j) * (0.7 * nA(x, y) + 0.3 * nB(x, y)) + j * jitter;
           } else {
             u = 0.75 * nA(x, y) + 0.25 * nB(x, y);
           }
@@ -246,17 +250,23 @@
         }
       }
 
-      // 4. cleanup: drop lone pixels and fill one-pixel pits
-      const c = new Uint8Array(land);
-      for (let j = 1; j < W - 1; j++) {
-        for (let i = 1; i < W - 1; i++) {
-          const idx = j * W + i;
-          const k = land[idx - 1] + land[idx + 1] + land[idx - W] + land[idx + W];
-          if (land[idx] && k <= 1) c[idx] = 0;
-          else if (!land[idx] && k >= 3) c[idx] = 1;
+      // 4. cleanup (two passes): drop lone pixels and 1px-wide spikes/strands,
+      //    fill one-pixel pits and 1px-wide cracks. Runs on the extended grid,
+      //    so neighbouring tiles clean their shared border identically.
+      for (let pass = 0; pass < 2; pass++) {
+        const c = new Uint8Array(land);
+        for (let j = 1; j < W - 1; j++) {
+          for (let i = 1; i < W - 1; i++) {
+            const idx = j * W + i;
+            const l = land[idx - 1], r = land[idx + 1], u = land[idx - W], d = land[idx + W];
+            const k = l + r + u + d;
+            if (land[idx]) {
+              if (k <= 1 || (!l && !r) || (!u && !d)) c[idx] = 0;
+            } else if (k >= 3 || (l && r) || (u && d)) c[idx] = 1;
+          }
         }
+        land = c;
       }
-      land = c;
     }
 
     // 5. elevation wall: rows below land, `wallH` tall
@@ -283,6 +293,7 @@
     for (let s = 0; s < shades; s++) ramp.push(mix(colEdge, colBase, s / (shades - 1)));
     const baseLight = lighten(colBase, 0.12);
     const baseDark = mix(colBase, colEdge, 0.3);
+    const colRim = o.colors.rim ? hexToRgb(o.colors.rim) : lighten(colBase, 0.25);
     const fleckLight = lighten(colBase, 0.3);
     const fleckDark = mix(colBase, colEdge, 0.45);
     const tex = o.texture / 100;
@@ -312,7 +323,9 @@
             level = clamp(1 + Math.floor((jittered / o.fade) * (shades - 2)), 1, shades - 1);
           }
           c = ramp[level];
-          if (level === shades - 1) {
+          if (o.rimLight && dist >= 1.01 && dist < 2.01) {
+            c = colRim; // 1px highlight just inside the outline
+          } else if (level === shades - 1) {
             const v = 0.6 * t2 + 0.4 * t1;
             if (v > 1 - tex * 1.6) c = baseLight;
             else if (v < tex * 0.9) c = baseDark;

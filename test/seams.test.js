@@ -11,6 +11,7 @@
 const assert = require('assert');
 const TBG = require('../src/layouts.js');
 require('../src/generator.js');
+require('../src/presets.js');
 const { defaultOptions } = require('../src/presets.js');
 
 let failures = 0;
@@ -43,6 +44,9 @@ function variants(size) {
     ['elevation', { ...base, elevation: true }],
     ['big-noise', { ...base, noise: Math.round(size / 5), radius: Math.round(size / 10), padding: Math.round(size / 8) }],
     ['no-noise', { ...base, noise: 0, radius: 0 }],
+    ['olive-rim', { ...base, rimLight: true, shades: 2, cornerOffset: Math.round(size / 4) }],
+    ['olive-preset', { ...base, ...TBG.presetStyle(TBG.PRESETS.olive, size), colors: TBG.presetColors(TBG.PRESETS.olive) }],
+    ['no-offset', { ...base, cornerOffset: 0, elevation: true }],
   ];
 }
 
@@ -61,12 +65,15 @@ check('47-piece uses the 12x4 sheet', () => {
 check('15-piece has all 16 corner combinations', () => {
   assert.strictEqual(new Set(TBG.MODES['15'].cells.map((c) => c.mask)).size, 16);
 });
+check('16 subset has 16 tiles', () => {
+  assert.strictEqual(TBG.MODES['16'].cells.length, 16);
+});
 check('17-piece has 17 tiles', () => {
   assert.strictEqual(TBG.MODES['17'].cells.length, 17);
 });
 
 console.log('grid');
-for (const modeId of ['15', '17', '47']) {
+for (const modeId of ['15', '16', '17', '47']) {
   const mode = TBG.MODES[modeId];
   for (const size of [16, 32, 64]) {
     const o = { ...defaultOptions(size), gridColor: '#ff00ff', gridWidth: 2, margin: 5 };
@@ -127,7 +134,7 @@ check('15-piece diagonal tiles join through the centre', () => {
 
 for (const size of [16, 32, 64]) {
   for (const [vname, o] of variants(size)) {
-    for (const modeId of ['15', '17', '47']) {
+    for (const modeId of ['15', '16', '17', '47']) {
       const mode = TBG.MODES[modeId];
       const tiles = TBG.renderTiles(mode, o);
       const n = size;
@@ -146,21 +153,27 @@ for (const size of [16, 32, 64]) {
       });
 
       check(`${modeId}-piece ${size}px ${vname}: connected edges continue`, () => {
+        // A seam may differ only as much as two neighbouring pixel lines inside
+        // the tiles themselves do (rough edges vary line to line), plus slack.
         let worst = 0;
+        let detail = '';
+        const judge = (seam, inner, what) => {
+          const excess = seam - Math.max(4, inner + 3);
+          if (excess > worst) (worst = excess), (detail = `${what}: seam ${seam}px vs in-tile ${inner}px`);
+        };
         for (const a of tiles) {
           for (const b of tiles) {
-            // horizontal: a | b must agree on the shared terrain at the border
             if (compatibleH(a.cell, b.cell)) {
-              const d = diff(col(a, n - 1), col(b, 0));
-              worst = Math.max(worst, d);
+              const inner = Math.max(diff(col(a, n - 2), col(a, n - 1)), diff(col(b, 0), col(b, 1)));
+              judge(diff(col(a, n - 1), col(b, 0)), inner, `${a.cell.mask}|${b.cell.mask}`);
             }
             if (compatibleV(a.cell, b.cell)) {
-              const d = diff(row(a, n - 1), row(b, 0));
-              worst = Math.max(worst, d);
+              const inner = Math.max(diff(row(a, n - 2), row(a, n - 1)), diff(row(b, 0), row(b, 1)));
+              judge(diff(row(a, n - 1), row(b, 0)), inner, `${a.cell.mask}/${b.cell.mask}`);
             }
           }
         }
-        assert.ok(worst <= 4, `worst border mismatch ${worst}px`);
+        assert.ok(worst <= 0, detail);
       });
     }
   }

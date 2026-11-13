@@ -332,9 +332,38 @@ input[type='checkbox'] {
   pointer-events: none;
 }
 
+.seg.modes {
+  grid-auto-flow: row;
+  grid-template-columns: 1fr 1fr;
+}
+
+.legend {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend i {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  margin: 0 6px 2px 10px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.previewtools .check {
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
 .presets {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 7px;
   margin-top: 14px;
 }

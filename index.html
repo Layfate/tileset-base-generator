@@ -28,8 +28,9 @@
         <section>
           <h2>Geometry</h2>
           <label class="lbl">Mode</label>
-          <div class="seg" data-key="mode">
+          <div class="seg modes" data-key="mode">
             <button data-value="15">15-piece</button>
+            <button data-value="16">16 subset</button>
             <button data-value="17">17-piece</button>
             <button data-value="47">47-piece</button>
           </div>
@@ -48,13 +49,18 @@
           </div>
 
           <div class="slider" data-key="radius"><label>Corner radius <output></output></label><input type="range" min="0" step="1" /></div>
-          <div class="slider" data-key="padding">
+          <div class="slider" data-key="padding" data-show-modes="16,17,47">
             <label>Tile padding <output></output></label><input type="range" min="0" step="1" />
             <small>Distance from an open tile edge</small>
           </div>
+          <div class="slider" data-key="cornerOffset" data-show-modes="15">
+            <label>Edge offset <output></output></label><input type="range" min="0" step="1" />
+            <small>How far terrain reaches past the tile centre</small>
+          </div>
           <div class="slider" data-key="noise"><label>Edge noise <output></output></label><input type="range" min="0" step="1" /></div>
           <div class="slider" data-key="noiseSize"><label>Noise size <output></output></label><input type="range" min="1" step="1" /></div>
-          <label class="check box" data-mode-only="15"><input type="checkbox" data-key="joinDiagonals" /> Join diagonal pieces</label>
+          <div class="slider" data-key="jitter" data-dep="rough"><label>Pixel jitter <output></output></label><input type="range" min="0" max="90" step="1" /></div>
+          <label class="check box" data-show-modes="15"><input type="checkbox" data-key="joinDiagonals" /> Join diagonal pieces</label>
         </section>
 
         <section>
@@ -63,7 +69,10 @@
             <label class="color"><span>Base</span><input type="color" data-color="base" /></label>
             <label class="color"><span>Edge</span><input type="color" data-color="edge" /></label>
             <label class="color"><span>Rock</span><input type="color" data-color="rock" /></label>
+            <label class="color"><span>Rim</span><input type="color" data-color="rim" /></label>
           </div>
+
+          <label class="check box"><input type="checkbox" data-key="rimLight" /> Light rim inside the outline</label>
 
           <label class="check box"><input type="checkbox" data-key="elevation" /> Elevation edge</label>
           <div class="slider" data-key="wallHeight" data-dep="elevation">
@@ -132,11 +141,13 @@
         <div class="view" id="previewView" hidden>
           <div class="previewtools">
             <span class="hint">Left-drag paints terrain, right-drag erases.</span>
+            <label class="check"><input type="checkbox" id="showGrids" checked /> Show grids</label>
             <button id="randomMap" class="btn ghost small">Random map</button>
             <button id="clearMap" class="btn ghost small">Clear</button>
             <button id="downloadMap" class="btn ghost small">Map PNG</button>
           </div>
           <canvas id="preview" aria-label="Autotiled map preview"></canvas>
+          <p class="legend" id="gridLegend"></p>
         </div>
         <div id="busy" class="busy" hidden>rendering…</div>
       </section>

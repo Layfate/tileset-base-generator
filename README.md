@@ -2,12 +2,13 @@
 
 A free, open-source generator for **seamless autotile tileset bases**. Choose a format and a tile size, adjust the shape and colours, and download a PNG sprite sheet plus JSON tile metadata.
 
-- **Formats:** 15-piece (Wang corner), 17-piece (top-down), 47-piece (blob)
+- **Formats:** 15-piece (dual-grid / Wang corner), 16 subset, 17-piece (top-down), 47-piece (blob)
 - **Tile sizes:** 16, 32 and 64 px
-- Rough or clean edges, corner radius, padding, edge noise, shading ramp, texture, flecks
+- Rough or clean edges, corner radius, padding, edge noise, pixel jitter, shading ramp, light rim, texture, flecks
 - Optional **elevation edge** (a rock cliff face under south-facing edges)
-- **Map preview:** paint terrain and watch the tiles autotile in real time
-- PNG export (native or 1024 px nearest-neighbour upscale) and JSON metadata
+- **Olive** preset with a flat fill, dark outline and light rim, the style common in dual-grid tutorials
+- **Map preview:** paint terrain and watch the tiles autotile in real time, with the dual grid drawn on top
+- PNG export (native, or exactly 1024 px with uniform grid lines) and JSON metadata
 - No build step and no dependencies: open `index.html` and it runs offline
 
 **Live app:** https://layfate.github.io/tileset-base-generator/
@@ -16,15 +17,31 @@ A free, open-source generator for **seamless autotile tileset bases**. Choose a 
 
 ## Formats
 
-| 15-piece corner (Wang) | 17-piece top-down | 47-piece blob |
+| 15-piece (dual grid) | 16 subset | 17-piece top-down |
 | :---: | :---: | :---: |
-| ![15](docs/images/sheet-15.png) | ![17](docs/images/sheet-17.png) | ![47](docs/images/sheet-47.png) |
+| ![15](docs/images/sheet-15.png) | ![16](docs/images/sheet-16.png) | ![17](docs/images/sheet-17.png) |
 
-### 15-piece: corner / Wang 2-corner / marching squares
+![47](docs/images/sheet-47.png)
 
-Each tile is defined by which of its **4 corners** are terrain. That gives 16 combinations: 15 tiles plus one empty tile. This is the cheapest set that handles any map, including diagonals and inner corners. The sheet is laid out so the 16 tiles also join into one continuous picture.
+### 15-piece: dual grid / Wang 2-corner / marching squares
 
-Corner bitmask: `TL = 1, TR = 2, BR = 4, BL = 8`. With this format you paint **grid vertices**, not cells.
+![Olive 15-piece](docs/images/sheet-15-olive.png)
+
+This is the tileset behind the **dual-grid system**:
+
+- You paint terrain on a **world grid**.
+- Tiles are drawn on a second grid **offset by half a tile**, so every tile sits where 4 world cells meet.
+- Each tile is chosen from those 4 cells. That's 2⁴ = 16 combinations: 15 tiles plus an empty one, compared with 47 for an 8-neighbour blob set.
+
+The 16 tiles are laid out so they also join into one continuous picture.
+
+**Edge offset** sets how far terrain reaches past the tile centre. Hand-drawn dual-grid sets usually let terrain bulge a little past the halfway line. **Join diagonal pieces** connects the two diagonal tiles through the centre.
+
+Corner bitmask: `TL = 1, TR = 2, BR = 4, BL = 8`. In the map preview, **Show grids** draws the world grid in red and the tile grid in teal.
+
+### 16 subset
+
+The 17-piece set without the cross tile, in a 4×4 sheet. It has a 3×3 block, a vertical and a horizontal strip, and a single island. That's enough for separate rectangular landmasses.
 
 ### 17-piece: top-down
 
@@ -56,9 +73,13 @@ Open the [live app](https://layfate.github.io/tileset-base-generator/), or clone
 | Mode / Tile size | Tileset format and tile size in pixels |
 | Edge style | **Rough**: pixel-jittered edges. **Clean**: smooth wobble only |
 | Corner radius | Rounds outer and inner corners |
-| Tile padding | Gap between the terrain and an open tile edge (17 / 47) |
+| Tile padding | Gap between the terrain and an open tile edge (16 / 17 / 47) |
+| Edge offset | 15-piece: how far terrain reaches past the tile centre |
 | Edge noise / Noise size | Strength and feature size of the edge wobble |
-| Base / Edge / Rock | Fill colour, outline colour, cliff colour |
+| Pixel jitter | Rough style: how ragged the edge is at the single-pixel level |
+| Base / Edge / Rock / Rim | Fill colour, outline colour, cliff colour, rim highlight colour |
+| Light rim | A 1 px highlight just inside the outline |
+| Presets | Grass, stone, dirt, water and sand set colours. **Olive** also switches on the light rim and a flat fill, with round, ragged edges |
 | Elevation edge / Wall height | Draws a cliff face under south-facing edges |
 | Shades / Edge fade | Number of colours from outline to fill, and how wide the fade is |
 | Texture noise / Flecks | Interior variation and grass-style flecks |
@@ -77,6 +98,7 @@ Requires Node.js 16 or newer. No `npm install` needed.
 
 ```bash
 node cli.js --mode 47 --size 32 --out blob.png --json
+node cli.js --mode 15 --size 16 --preset olive --scale 8
 node cli.js --mode 15 --size 16 --preset sand --elevation --scale 4
 node cli.js --mode 17 --size 32 --fit 1024 --grid-width 2 --margin 16
 node cli.js --help
