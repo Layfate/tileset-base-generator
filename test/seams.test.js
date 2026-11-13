@@ -45,6 +45,7 @@ function variants(size) {
     ['big-noise', { ...base, noise: Math.round(size / 5), radius: Math.round(size / 10), padding: Math.round(size / 8) }],
     ['no-noise', { ...base, noise: 0, radius: 0 }],
     ['olive-rim', { ...base, rimLight: true, shades: 2, cornerOffset: Math.round(size / 4) }],
+    ['meadow-preset', { ...base, ...TBG.presetStyle(TBG.PRESETS.meadow, size), colors: TBG.presetColors(TBG.PRESETS.meadow) }],
     ['olive-preset', { ...base, ...TBG.presetStyle(TBG.PRESETS.olive, size), colors: TBG.presetColors(TBG.PRESETS.olive) }],
     ['no-offset', { ...base, cornerOffset: 0, elevation: true }],
   ];
@@ -67,6 +68,17 @@ check('15-piece has all 16 corner combinations', () => {
 });
 check('16 subset has 16 tiles', () => {
   assert.strictEqual(TBG.MODES['16'].cells.length, 16);
+});
+check('15-piece matches the jess-hammer Godot dual-grid atlas', () => {
+  // neighboursToAtlasCoord from DualGridTilemap.cs: [TL, TR, BL, BR] -> [col, row]
+  const rules = {
+    '1111': [2, 1], '0001': [1, 3], '0010': [0, 0], '0100': [0, 2], '1000': [3, 3],
+    '0101': [1, 0], '1010': [3, 2], '0011': [3, 0], '1100': [1, 2], '0111': [1, 1],
+    '1011': [2, 0], '1101': [2, 2], '1110': [3, 1], '0110': [2, 3], '1001': [0, 1],
+  };
+  const { lookup } = TBG.sheetMetadata(TBG.MODES['15'], defaultOptions(16)).dualGrid;
+  for (const [k, v] of Object.entries(rules)) assert.deepStrictEqual(lookup[k], v, k);
+  assert.strictEqual(lookup['0000'], null);
 });
 check('17-piece has 17 tiles', () => {
   assert.strictEqual(TBG.MODES['17'].cells.length, 17);

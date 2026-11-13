@@ -6,7 +6,8 @@ A free, open-source generator for **seamless autotile tileset bases**. Choose a 
 - **Tile sizes:** 16, 32 and 64 px
 - Rough or clean edges, corner radius, padding, edge noise, pixel jitter, shading ramp, light rim, texture, flecks
 - Optional **elevation edge** (a rock cliff face under south-facing edges)
-- **Olive** preset with a flat fill, dark outline and light rim, the style common in dual-grid tutorials
+- **Olive** and **Meadow** presets in the style of dual-grid tutorials, plus **Top light** shading (light rim on top and side edges, dark line under bottom edges)
+- The 15-piece sheet works as-is with [jess-hammer's Godot dual-grid system](https://github.com/jess-hammer/dual-grid-tilemap-system-godot) (see below)
 - **Map preview:** paint terrain and watch the tiles autotile in real time, with the dual grid drawn on top
 - PNG export (native, or exactly 1024 px with uniform grid lines) and JSON metadata
 - No build step and no dependencies: open `index.html` and it runs offline
@@ -79,7 +80,9 @@ Open the [live app](https://layfate.github.io/tileset-base-generator/), or clone
 | Pixel jitter | Rough style: how ragged the edge is at the single-pixel level |
 | Base / Edge / Rock / Rim | Fill colour, outline colour, cliff colour, rim highlight colour |
 | Light rim | A 1 px highlight just inside the outline |
-| Presets | Grass, stone, dirt, water and sand set colours. **Olive** also switches on the light rim and a flat fill, with round, ragged edges |
+| Lighting | **Outline**: Edge colour all around the terrain. **Top light**: Rim colour on top and side edges, Edge colour under bottom edges |
+| Fleck | Fleck colour. A light fleck gets a darker pixel under it (a grass tuft); a dark fleck stays a single speck |
+| Presets | Grass, stone, dirt, water and sand set colours. **Olive** also sets a flat fill, light rim and round, ragged edges. **Meadow** sets top lighting, smooth round edges and sparse dark specks |
 | Elevation edge / Wall height | Draws a cliff face under south-facing edges |
 | Shades / Edge fade | Number of colours from outline to fill, and how wide the fade is |
 | Texture noise / Flecks | Interior variation and grass-style flecks |
@@ -99,6 +102,7 @@ Requires Node.js 16 or newer. No `npm install` needed.
 ```bash
 node cli.js --mode 47 --size 32 --out blob.png --json
 node cli.js --mode 15 --size 16 --preset olive --scale 8
+node cli.js --mode 15 --size 16 --preset meadow --transparent --no-grid --json --out DemoGrassTiles.png
 node cli.js --mode 15 --size 16 --preset sand --elevation --scale 4
 node cli.js --mode 17 --size 32 --fit 1024 --grid-width 2 --margin 16
 node cli.js --help
@@ -114,6 +118,24 @@ The JSON file lists every tile's `x`, `y`, `col`, `row` and `mask`, plus `margin
 - **Tiled:** create a Terrain Set. Use *Corner* for 15-piece and *Mixed* for 47-piece.
 - **Unity:** use a Rule Tile, with one rule per mask.
 - **GameMaker:** the 47-piece mask order works with any standard blob autotile lookup.
+
+## Using it with the Godot dual-grid system
+
+![Meadow 15-piece](docs/images/sheet-15-meadow.png)
+
+[jess-hammer/dual-grid-tilemap-system-godot](https://github.com/jess-hammer/dual-grid-tilemap-system-godot) is a Godot 4 dual-grid tilemap demo. Its `DualGridTilemap.cs` picks each display tile from its 4 world cells with a fixed lookup table (`neighboursToAtlasCoord`). The 15-piece sheet here puts every tile at **the same atlas position** as that table and the demo's `DemoGrassTiles.png`. A test checks all 16 entries.
+
+To use a generated tileset there:
+
+1. Choose **15-piece** and **16** px. Turn off **Black grid** and **White bg**, and leave **Margin** at 0.
+2. Download the PNG. It's 64×64, the same size and layout as `Assets/DemoGrassTiles.png`.
+3. Replace that file (or the dirt or sand one) and reopen the project. No code changes are needed.
+
+For 32 or 64 px tiles, also change `TILE_SIZE` in `DualGridTilemap.cs` and the tile size in the TileSet.
+
+The JSON export for 15-piece includes a `dualGrid.lookup` table in the same key order as the script, `[topLeft, topRight, botLeft, botRight]`. For example, `"1011": [2, 0]` means top-left, bottom-left and bottom-right are terrain, so use the tile at column 2, row 0. `"0000"` is the empty tile.
+
+Coordinates work like this: display tile `(x, y)` reads world cells `(x, y)`, `(x+1, y)`, `(x, y+1)` and `(x+1, y+1)`. The Godot script shifts the display layer by half a tile the other way, so its tile `(x, y)` reads `(x-1, y-1)` to `(x, y)`. It's the same lookup either way.
 
 ## How it works
 

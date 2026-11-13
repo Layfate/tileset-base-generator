@@ -30,6 +30,28 @@
         jitter: Math.round(60 - 12.5 * Math.log2(n / 16)),
       }),
     },
+    // light from above: light rim on top/side edges, dark line under bottom
+    // edges, smooth round curves and sparse dark specks
+    meadow: {
+      base: '#a2a65e',
+      edge: '#4b633a',
+      rock: '#5b4a32',
+      rim: '#c3be6a',
+      fleck: '#919b5e',
+      style: (n) => ({
+        lighting: 'top',
+        rimLight: false,
+        shades: 2,
+        texture: 0,
+        flecksOn: true,
+        flecks: 3,
+        rough: false,
+        radius: Math.round((n * 5) / 16),
+        noise: Math.max(1, Math.round(Math.sqrt(n / 16))),
+        noiseSize: Math.max(1, Math.round(n / 4)),
+        cornerOffset: Math.max(1, Math.round(n / 16)),
+      }),
+    },
   };
 
   /** Settings a preset applies besides colours (may depend on tile size). */
@@ -40,7 +62,9 @@
 
   /** Colours only (without the optional style block). */
   function presetColors(p) {
-    return { base: p.base, edge: p.edge, rock: p.rock, rim: p.rim };
+    const c = { base: p.base, edge: p.edge, rock: p.rock, rim: p.rim };
+    if (p.fleck) c.fleck = p.fleck;
+    return c;
   }
 
   /** Defaults tuned at 32px and scaled for 16 / 64. */
@@ -64,6 +88,7 @@
       flecks: 6,
       flecksOn: false,
       rimLight: false,
+      lighting: 'outline',
       joinDiagonals: true,
       whiteBg: true,
       grid: true,
